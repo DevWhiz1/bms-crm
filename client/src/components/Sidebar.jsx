@@ -17,6 +17,7 @@ import {
   Dashboard,
   People,
   Settings,
+  Description,
 } from '@mui/icons-material'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -32,6 +33,11 @@ const menuItems = [
     text: 'Tenants',
     icon: <People />,
     path: '/tenants',
+  },
+  {
+    text: 'Contracts',
+    icon: <Description />,
+    path: '/contracts',
   },
 ]
 
@@ -98,7 +104,7 @@ const Sidebar = ({ open, onClose }) => {
               {user?.email}
             </Typography>
             <Chip
-          label={` Level ${user?.account_level || "nan"}`}
+          label={`Level ${user?.account_level || "nan"}`}
           size="small"
           color="primary"
           variant="outlined"
@@ -185,8 +191,8 @@ const Sidebar = ({ open, onClose }) => {
           borderRight: '1px solid',
           borderColor: 'divider',
           transition: 'width 0.3s ease',
-          top: 64, // Account for header height
-          height: 'calc(100% - 64px)', // Subtract header height
+          top: 64, 
+          height: 'calc(100% - 64px)', 
         },
       }}
     >

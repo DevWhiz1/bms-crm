@@ -7,6 +7,7 @@ require('dotenv').config();
 const db = require('./config/database');
 const userRoutes = require('./routes/userRoutes');
 const tenantRoutes = require('./routes/tenantRoutes');
+const contractRoutes = require('./routes/contractRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -77,18 +78,21 @@ app.use('/uploads', express.static('uploads', {
 }));
 
 // Test database connection
-db.getConnection((err, connection) => {
-  if (err) {
+(async () => {
+  try {
+    const connection = await db.getConnection();
+    console.log('✅ Database connected successfully');
+    connection.release();
+  } catch (err) {
     console.error('Database connection failed:', err.message);
     process.exit(1);
   }
-  console.log('✅ Database connected successfully');
-  connection.release();
-});
+})();
 
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/tenants', tenantRoutes);
+app.use('/api/contracts', contractRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

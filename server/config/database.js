@@ -1,4 +1,4 @@
-const mysql = require('mysql2');
+const mysql = require('mysql2/promise');
 require('dotenv').config();
 
 // connection pool for better performance
@@ -17,29 +17,14 @@ const pool = mysql.createPool({
 });
 
 // Get a connection from the pool
-const getConnection = () => {
-  return new Promise((resolve, reject) => {
-    pool.getConnection((err, connection) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(connection);
-      }
-    });
-  });
+const getConnection = async () => {
+  return await pool.getConnection();
 };
 
 // Execute query with promise
-const query = (sql, params = []) => {
-  return new Promise((resolve, reject) => {
-    pool.execute(sql, params, (err, results) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(results);
-      }
-    });
-  });
+const query = async (sql, params = []) => {
+  const [results] = await pool.execute(sql, params);
+  return results;
 };
 
 // Test connection

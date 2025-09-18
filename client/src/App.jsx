@@ -6,6 +6,7 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import Tenants from './pages/Tenants'
+import Contracts from './pages/Contracts'
 
 function App() {
   return (
@@ -26,6 +27,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Tenants />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/contracts" 
+          element={
+            <ProtectedRoute>
+              <Contracts />
             </ProtectedRoute>
           } 
         />

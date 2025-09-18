@@ -125,6 +125,57 @@ export const tenantAPI = {
   },
 }
 
+// Contract API endpoints
+export const contractAPI = {
+  // Get all contracts with pagination and filters
+  getContracts: async (params = {}) => {
+    const response = await api.get('/contracts', { params })
+    return response.data
+  },
+
+  // Get contract by ID
+  getContractById: async (id) => {
+    const response = await api.get(`/contracts/${id}`)
+    return response.data
+  },
+
+  // Create new contract
+  createContract: async (contractData) => {
+    const response = await api.post('/contracts', contractData)
+    return response.data
+  },
+
+  // Update contract
+  updateContract: async (id, contractData) => {
+    const response = await api.put(`/contracts/${id}`, contractData)
+    return response.data
+  },
+
+  // Delete contract
+  deleteContract: async (id) => {
+    const response = await api.delete(`/contracts/${id}`)
+    return response.data
+  },
+
+  // Get contract statistics
+  getContractStats: async () => {
+    const response = await api.get('/contracts/stats')
+    return response.data
+  },
+
+  // Get all apartments
+  getApartments: async (params = {}) => {
+    const response = await api.get('/contracts/apartments', { params })
+    return response.data
+  },
+
+  // Get apartments grouped by floor
+  getApartmentsByFloor: async () => {
+    const response = await api.get('/contracts/apartments/by-floor')
+    return response.data
+  },
+}
+
 // Health check
 export const healthAPI = {
   check: async () => {
