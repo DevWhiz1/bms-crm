@@ -81,6 +81,8 @@ const ContractForm = ({ open, onClose, contract, onSuccess }) => {
   const [apartments, setApartments] = useState([])
   const [apartmentsByFloor, setApartmentsByFloor] = useState([])
   const [selectedApartments, setSelectedApartments] = useState([])
+  const [selectedFloor, setSelectedFloor] = useState(null)
+  const [filteredApartments, setFilteredApartments] = useState([])
 
   const isEdit = !!contract
 
@@ -133,17 +135,27 @@ const ContractForm = ({ open, onClose, contract, onSuccess }) => {
   // Reset form when contract changes
   useEffect(() => {
     if (contract) {
+      // Format dates properly for the date inputs
+      const startDate = contract.contract_start_date ? 
+        new Date(contract.contract_start_date).toISOString().split('T')[0] : ''
+      const endDate = contract.contract_end_date ? 
+        new Date(contract.contract_end_date).toISOString().split('T')[0] : ''
+      
       reset({
-        rent: contract.rent || '',
-        service_charges: contract.service_charges || '',
-        security_fees: contract.security_fees || '',
-        contract_start_date: contract.contract_start_date || '',
-        contract_end_date: contract.contract_end_date || '',
+        rent: contract.rent?.toString() || '',
+        service_charges: contract.service_charges?.toString() || '',
+        security_fees: contract.security_fees?.toString() || '',
+        contract_start_date: startDate,
+        contract_end_date: endDate,
         tenant_id: contract.tenant_id || null,
         apartments: contract.apartments?.map(apt => apt.apartment_id) || [],
         is_active: contract.is_active !== undefined ? contract.is_active : true,
       })
       setSelectedApartments(contract.apartments || [])
+      // Set initial floor based on first apartment if editing
+      if (contract.apartments && contract.apartments.length > 0) {
+        setSelectedFloor(contract.apartments[0].floor_no)
+      }
     } else {
       reset({
         rent: '',
@@ -156,13 +168,32 @@ const ContractForm = ({ open, onClose, contract, onSuccess }) => {
         is_active: true,
       })
       setSelectedApartments([])
+      setSelectedFloor(null)
     }
     setError('')
   }, [contract, reset])
 
+  // Filter apartments based on selected floor
+  useEffect(() => {
+    if (selectedFloor) {
+      const filtered = apartments.filter(apt => apt.floor_no === selectedFloor)
+      setFilteredApartments(filtered)
+    } else {
+      setFilteredApartments(apartments)
+    }
+  }, [selectedFloor, apartments])
+
   const handleClose = () => {
     onClose()
     setError('')
+    setSelectedApartments([])
+    setSelectedFloor(null)
+  }
+
+  const handleFloorChange = (floorNo) => {
+    setSelectedFloor(floorNo)
+    // Clear selected apartments when floor changes
+    setValue('apartments', [])
     setSelectedApartments([])
   }
 
@@ -404,7 +435,30 @@ const ContractForm = ({ open, onClose, contract, onSuccess }) => {
               </Typography>
             </Grid>
 
-            <Grid item xs={12}>
+            {/* Floor Selection */}
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>Select Floor</InputLabel>
+                <Select
+                  value={selectedFloor || ''}
+                  onChange={(e) => handleFloorChange(e.target.value)}
+                  label="Select Floor"
+                  startAdornment={<Home sx={{ mr: 1, color: 'action.active' }} />}
+                >
+                  <MenuItem value="">
+                    <em>All Floors</em>
+                  </MenuItem>
+                  {apartmentsByFloor.map((floor) => (
+                    <MenuItem key={floor.floor_no} value={floor.floor_no}>
+                      Floor {floor.floor_no} ({floor.apartments_count} apartments)
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Apartment Selection */}
+            <Grid item xs={12} md={6}>
               <Controller
                 name="apartments"
                 control={control}
@@ -416,6 +470,7 @@ const ContractForm = ({ open, onClose, contract, onSuccess }) => {
                       value={field.value || []}
                       onChange={(e) => handleApartmentChange(e.target.value)}
                       input={<OutlinedInput label="Select Apartments" />}
+                      disabled={!selectedFloor}
                       renderValue={(selected) => (
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                           {selected.map((value) => {
@@ -423,7 +478,7 @@ const ContractForm = ({ open, onClose, contract, onSuccess }) => {
                             return (
                               <Chip
                                 key={value}
-                                label={`Floor ${apartment?.floor_no} - Apt ${apartment?.apartment_no}`}
+                                label={`Apt ${apartment?.apartment_no}`}
                                 size="small"
                               />
                             )
@@ -431,14 +486,7 @@ const ContractForm = ({ open, onClose, contract, onSuccess }) => {
                         </Box>
                       )}
                     >
-                      {apartmentsByFloor.map((floor) => (
-                        <MenuItem key={floor.floor_no} disabled>
-                          <Typography variant="subtitle2" color="primary">
-                            Floor {floor.floor_no}
-                          </Typography>
-                        </MenuItem>
-                      ))}
-                      {apartments.map((apartment) => (
+                      {filteredApartments.map((apartment) => (
                         <MenuItem key={apartment.apartment_id} value={apartment.apartment_id}>
                           <Checkbox
                             checked={field.value?.includes(apartment.apartment_id) || false}
@@ -450,6 +498,11 @@ const ContractForm = ({ open, onClose, contract, onSuccess }) => {
                         </MenuItem>
                       ))}
                     </Select>
+                    {!selectedFloor && (
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, ml: 1.75 }}>
+                        Please select a floor first
+                      </Typography>
+                    )}
                     {errors.apartments && (
                       <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
                         {errors.apartments.message}

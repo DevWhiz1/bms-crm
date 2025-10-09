@@ -176,6 +176,120 @@ export const contractAPI = {
   },
 }
 
+// Meter API endpoints
+export const meterAPI = {
+  // Get all meters with pagination and filters
+  getMeters: async (params = {}) => {
+    const response = await api.get('/meters', { params })
+    return response.data
+  },
+
+  // Get meter by ID
+  getMeterById: async (id) => {
+    const response = await api.get(`/meters/${id}`)
+    return response.data
+  },
+
+  // Create new meter
+  createMeter: async (meterData) => {
+    const response = await api.post('/meters', meterData)
+    return response.data
+  },
+
+  // Update meter
+  updateMeter: async (id, meterData) => {
+    const response = await api.put(`/meters/${id}`, meterData)
+    return response.data
+  },
+
+  // Delete meter
+  deleteMeter: async (id) => {
+    const response = await api.delete(`/meters/${id}`)
+    return response.data
+  },
+
+  // Get meters by apartment
+  getMetersByApartment: async (apartmentId) => {
+    const response = await api.get(`/meters/apartment/${apartmentId}`)
+    return response.data
+  },
+
+  // Get meter statistics
+  getMeterStats: async () => {
+    const response = await api.get('/meters/stats')
+    return response.data
+  },
+}
+
+// Meter Reading API endpoints
+export const meterReadingAPI = {
+  // Get all meter readings with pagination and filters
+  getReadings: async (params = {}) => {
+    const response = await api.get('/meter-readings', { params })
+    return response.data
+  },
+
+  // Get reading by ID
+  getReadingById: async (id) => {
+    const response = await api.get(`/meter-readings/${id}`)
+    return response.data
+  },
+
+  // Create new meter reading
+  createReading: async (readingData) => {
+    const response = await api.post('/meter-readings', readingData)
+    return response.data
+  },
+
+  // Update meter reading
+  updateReading: async (id, readingData) => {
+    const response = await api.put(`/meter-readings/${id}`, readingData)
+    return response.data
+  },
+
+  // Delete meter reading
+  deleteReading: async (id) => {
+    const response = await api.delete(`/meter-readings/${id}`)
+    return response.data
+  },
+
+  // Get readings by meter
+  getReadingsByMeter: async (meterId, limit = 12) => {
+    const response = await api.get(`/meter-readings/meter/${meterId}`, {
+      params: { limit },
+    })
+    return response.data
+  },
+
+  // Get readings by apartment
+  getReadingsByApartment: async (apartmentId) => {
+    const response = await api.get(`/meter-readings/apartment/${apartmentId}`)
+    return response.data
+  },
+
+  // Check previous reading
+  checkPreviousReading: async (meterId, readingDate) => {
+    const response = await api.get('/meter-readings/check-previous', {
+      params: { meter_id: meterId, reading_date: readingDate },
+    })
+    return response.data
+  },
+
+  // Get meter reading statistics
+  getReadingStats: async () => {
+    const response = await api.get('/meter-readings/stats')
+    return response.data
+  },
+
+  // Get consumption by meter type
+  getConsumptionByType: async (startDate = null, endDate = null) => {
+    const response = await api.get('/meter-readings/consumption-by-type', {
+      params: { start_date: startDate, end_date: endDate },
+    })
+    return response.data
+  },
+}
+
 // Health check
 export const healthAPI = {
   check: async () => {

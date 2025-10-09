@@ -8,6 +8,8 @@ const db = require('./config/database');
 const userRoutes = require('./routes/userRoutes');
 const tenantRoutes = require('./routes/tenantRoutes');
 const contractRoutes = require('./routes/contractRoutes');
+const meterRoutes = require('./routes/meterRoutes');
+const meterReadingRoutes = require('./routes/meterReadingRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -93,6 +95,8 @@ app.use('/uploads', express.static('uploads', {
 app.use('/api/users', userRoutes);
 app.use('/api/tenants', tenantRoutes);
 app.use('/api/contracts', contractRoutes);
+app.use('/api/meters', meterRoutes);
+app.use('/api/meter-readings', meterReadingRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
   Box,
   Typography,
@@ -77,7 +77,7 @@ const Contracts = () => {
   const [selectedContractId, setSelectedContractId] = useState(null)
 
   // Load contracts
-  const loadContracts = async () => {
+  const loadContracts = useCallback(async () => {
     try {
       setLoading(true)
       setError('')
@@ -96,23 +96,27 @@ const Contracts = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [pagination.page, pagination.limit, filters.search, filters.is_active, filters.sortBy, filters.sortOrder])
 
   // Load statistics
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const response = await contractAPI.getContractStats()
       setStats(response.data.stats)
     } catch (err) {
       console.error('Failed to load stats:', err)
     }
-  }
+  }, [])
 
   // Load data on component mount and when filters change
   useEffect(() => {
     loadContracts()
+  }, [loadContracts])
+
+  // Load stats only on initial mount
+  useEffect(() => {
     loadStats()
-  }, [pagination.page, filters])
+  }, [loadStats])
 
   const handleSearch = (event) => {
     setFilters(prev => ({ ...prev, search: event.target.value }))
@@ -121,6 +125,13 @@ const Contracts = () => {
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({ ...prev, [field]: value }))
+    setPagination(prev => ({ ...prev, page: 1 }))
+  }
+
+  const handleStatusFilterChange = (event) => {
+    event.preventDefault()
+    const value = event.target.value
+    setFilters(prev => ({ ...prev, is_active: value }))
     setPagination(prev => ({ ...prev, page: 1 }))
   }
 
@@ -195,14 +206,6 @@ const Contracts = () => {
 
   const getStatusText = (isActive) => {
     return isActive ? 'Active' : 'Inactive'
-  }
-
-  if (loading && contracts.length === 0) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
-    )
   }
 
   return (
@@ -300,7 +303,8 @@ const Contracts = () => {
       {/* Filters */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Grid container spacing={2} alignItems="center">
+          <Box component="form" onSubmit={(e) => e.preventDefault()}>
+            <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
@@ -321,7 +325,7 @@ const Contracts = () => {
                 <InputLabel>Status</InputLabel>
                 <Select
                   value={filters.is_active}
-                  onChange={(e) => handleFilterChange('is_active', e.target.value)}
+                  onChange={handleStatusFilterChange}
                   label="Status"
                 >
                  
@@ -360,15 +364,20 @@ const Contracts = () => {
             </Grid>
             <Grid item xs={12} md={2}>
               <Button
+                type="button"
                 variant="outlined"
                 startIcon={<Refresh />}
-                onClick={loadContracts}
+                onClick={(e) => {
+                  e.preventDefault()
+                  loadContracts()
+                }}
                 fullWidth
               >
                 Refresh
               </Button>
             </Grid>
-          </Grid>
+            </Grid>
+          </Box>
         </CardContent>
       </Card>
 
@@ -398,8 +407,23 @@ const Contracts = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {contracts.map((contract) => (
-                <TableRow key={contract.contract_id} hover>
+              {loading && contracts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={10} align="center" sx={{ py: 5 }}>
+                    <CircularProgress />
+                  </TableCell>
+                </TableRow>
+              ) : contracts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={10} align="center" sx={{ py: 5 }}>
+                    <Typography color="text.secondary">
+                      No contracts found
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                contracts.map((contract) => (
+                  <TableRow key={contract.contract_id} hover>
                   <TableCell>
                     <Typography variant="subtitle2" fontWeight="bold">
                       #{contract.contract_id}
@@ -479,7 +503,8 @@ const Contracts = () => {
                     </IconButton>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

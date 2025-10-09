@@ -18,6 +18,8 @@ import {
   People,
   Settings,
   Description,
+  Speed,
+  Assessment,
 } from '@mui/icons-material'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -38,6 +40,16 @@ const menuItems = [
     text: 'Contracts',
     icon: <Description />,
     path: '/contracts',
+  },
+  {
+    text: 'Meters',
+    icon: <Speed />,
+    path: '/meters',
+  },
+  {
+    text: 'Meter Readings',
+    icon: <Assessment />,
+    path: '/meter-readings',
   },
 ]
 

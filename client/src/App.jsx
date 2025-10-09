@@ -7,6 +7,8 @@ import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import Tenants from './pages/Tenants'
 import Contracts from './pages/Contracts'
+import Meters from './pages/Meters'
+import MeterReadings from './pages/MeterReadings'
 
 function App() {
   return (
@@ -35,6 +37,22 @@ function App() {
           element={
             <ProtectedRoute>
               <Contracts />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/meters" 
+          element={
+            <ProtectedRoute>
+              <Meters />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/meter-readings" 
+          element={
+            <ProtectedRoute>
+              <MeterReadings />
             </ProtectedRoute>
           } 
         />
