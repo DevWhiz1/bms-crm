@@ -9,6 +9,7 @@ import Tenants from './pages/Tenants'
 import Contracts from './pages/Contracts'
 import Meters from './pages/Meters'
 import MeterReadings from './pages/MeterReadings'
+import MonthlyBills from './pages/MonthlyBills'
 
 function App() {
   return (
@@ -53,6 +54,14 @@ function App() {
           element={
             <ProtectedRoute>
               <MeterReadings />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/monthly-bills" 
+          element={
+            <ProtectedRoute>
+              <MonthlyBills />
             </ProtectedRoute>
           } 
         />

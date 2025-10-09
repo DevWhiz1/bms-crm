@@ -290,6 +290,59 @@ export const meterReadingAPI = {
   },
 }
 
+// Monthly Bill API endpoints
+export const monthlyBillAPI = {
+  // Generate bills for a month
+  generateBills: async (billData) => {
+    const response = await api.post('/monthly-bills/generate', billData)
+    return response.data
+  },
+
+  // Get all bills with pagination and filters
+  getBills: async (params = {}) => {
+    const response = await api.get('/monthly-bills', { params })
+    return response.data
+  },
+
+  // Get bill by ID
+  getBillById: async (id) => {
+    const response = await api.get(`/monthly-bills/${id}`)
+    return response.data
+  },
+
+  // Update bill
+  updateBill: async (id, billData) => {
+    const response = await api.put(`/monthly-bills/${id}`, billData)
+    return response.data
+  },
+
+  // Mark bill as paid
+  markBillAsPaid: async (id) => {
+    const response = await api.patch(`/monthly-bills/${id}/mark-paid`)
+    return response.data
+  },
+
+  // Delete bill
+  deleteBill: async (id) => {
+    const response = await api.delete(`/monthly-bills/${id}`)
+    return response.data
+  },
+
+  // Get bill statistics
+  getBillStats: async () => {
+    const response = await api.get('/monthly-bills/stats')
+    return response.data
+  },
+
+  // Check if bills exist for a month
+  checkBillsExist: async (month) => {
+    const response = await api.get('/monthly-bills/check-exists', {
+      params: { month },
+    })
+    return response.data
+  },
+}
+
 // Health check
 export const healthAPI = {
   check: async () => {

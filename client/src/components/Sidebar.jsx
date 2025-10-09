@@ -20,6 +20,7 @@ import {
   Description,
   Speed,
   Assessment,
+  Receipt,
 } from '@mui/icons-material'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -50,6 +51,11 @@ const menuItems = [
     text: 'Meter Readings',
     icon: <Assessment />,
     path: '/meter-readings',
+  },
+  {
+    text: 'Monthly Bills',
+    icon: <Receipt />,
+    path: '/monthly-bills',
   },
 ]
 
