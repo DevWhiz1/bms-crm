@@ -11,6 +11,7 @@ const contractRoutes = require('./routes/contractRoutes');
 const meterRoutes = require('./routes/meterRoutes');
 const meterReadingRoutes = require('./routes/meterReadingRoutes');
 const monthlyBillRoutes = require('./routes/monthlyBillRoutes');
+const invoiceRoutes = require('./routes/invoiceRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -99,6 +100,7 @@ app.use('/api/contracts', contractRoutes);
 app.use('/api/meters', meterRoutes);
 app.use('/api/meter-readings', meterReadingRoutes);
 app.use('/api/monthly-bills', monthlyBillRoutes);
+app.use('/api/invoices', invoiceRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

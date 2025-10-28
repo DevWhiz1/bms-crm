@@ -351,4 +351,23 @@ export const healthAPI = {
   },
 }
 
+// Invoice API endpoints
+export const invoiceAPI = {
+  // Get detailed invoice data
+  getInvoiceDetails: async (billId, signal = null) => {
+    const config = {
+      timeout: 15000, // 15 second timeout
+      ...(signal && { signal })
+    }
+    const response = await api.get(`/invoices/${billId}`, config)
+    return response.data
+  },
+
+  // Generate PDF (placeholder)
+  generatePDF: async (billId) => {
+    const response = await api.get(`/invoices/${billId}/pdf`)
+    return response.data
+  },
+}
+
 export default api

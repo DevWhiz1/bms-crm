@@ -48,6 +48,7 @@ import {
 } from '@mui/icons-material'
 import { monthlyBillAPI } from '../services/api'
 import BillGenerationForm from '../components/BillGenerationForm'
+import InvoiceView from '../components/InvoiceView'
 import Layout from '../components/Layout'
 
 const MonthlyBills = () => {
@@ -71,6 +72,7 @@ const MonthlyBills = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [billToDelete, setBillToDelete] = useState(null)
   const [deleting, setDeleting] = useState(false)
+  const [invoiceOpen, setInvoiceOpen] = useState(false)
   const [stats, setStats] = useState(null)
   const [menuAnchor, setMenuAnchor] = useState(null)
   const [selectedBillId, setSelectedBillId] = useState(null)
@@ -152,7 +154,6 @@ const MonthlyBills = () => {
       await monthlyBillAPI.markBillAsPaid(billId)
       loadBills()
       loadStats()
-      handleMenuClose()
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to mark bill as paid')
     }
@@ -186,6 +187,17 @@ const MonthlyBills = () => {
 
   const handleMenuClose = () => {
     setMenuAnchor(null)
+    // Don't reset selectedBillId here as it might be needed for invoice view
+  }
+
+  const handleViewInvoice = (billId) => {
+    setMenuAnchor(null) // Close menu
+    setSelectedBillId(billId)
+    setInvoiceOpen(true)
+  }
+
+  const handleCloseInvoice = () => {
+    setInvoiceOpen(false)
     setSelectedBillId(null)
   }
 
@@ -216,7 +228,7 @@ const MonthlyBills = () => {
       <Box>
         {/* Header */}
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Typography variant="h4" fontWeight="bold">
+          <Typography variant="h5" fontWeight="bold">
             Monthly Bills
           </Typography>
           <Button
@@ -236,9 +248,9 @@ const MonthlyBills = () => {
               <Card>
                 <CardContent>
                   <Box display="flex" alignItems="center">
-                    <Receipt color="primary" sx={{ mr: 2, fontSize: 40 }} />
+                    {/* <Receipt color="primary" sx={{ mr: 1, fontSize: 30 }} /> */}
                     <Box>
-                      <Typography variant="h4" fontWeight="bold">
+                      <Typography variant="h5" fontWeight="bold">
                         {stats.total_bills}
                       </Typography>
                       <Typography color="text.secondary">
@@ -253,9 +265,9 @@ const MonthlyBills = () => {
               <Card>
                 <CardContent>
                   <Box display="flex" alignItems="center">
-                    <CheckCircle color="success" sx={{ mr: 2, fontSize: 40 }} />
+                    {/* <CheckCircle color="success" sx={{ mr: 1, fontSize: 30 }} /> */}
                     <Box>
-                      <Typography variant="h4" fontWeight="bold">
+                      <Typography variant="h5" fontWeight="bold">
                         {stats.paid_bills}
                       </Typography>
                       <Typography color="text.secondary">
@@ -270,9 +282,9 @@ const MonthlyBills = () => {
               <Card>
                 <CardContent>
                   <Box display="flex" alignItems="center">
-                    <Cancel color="error" sx={{ mr: 2, fontSize: 40 }} />
+                    {/* <Cancel color="error" sx={{ mr: 3, fontSize: 30 }} /> */}
                     <Box>
-                      <Typography variant="h4" fontWeight="bold">
+                      <Typography variant="h5" fontWeight="bold">
                         {stats.unpaid_bills}
                       </Typography>
                       <Typography color="text.secondary">
@@ -287,9 +299,9 @@ const MonthlyBills = () => {
               <Card>
                 <CardContent>
                   <Box display="flex" alignItems="center">
-                    <AttachMoney color="warning" sx={{ mr: 2, fontSize: 40 }} />
+                    {/* <AttachMoney color="warning" sx={{ mr: 1, fontSize: 30 }} /> */}
                     <Box>
-                      <Typography variant="h4" fontWeight="bold">
+                      <Typography variant="h5" fontWeight="bold">
                         {formatCurrency(stats.pending_amount || 0)}
                       </Typography>
                       <Typography color="text.secondary">
@@ -522,7 +534,7 @@ const MonthlyBills = () => {
             onClick={() => {
               const bill = bills.find(b => b.monthly_bill_id === selectedBillId)
               handleViewBill(bill)
-              handleMenuClose()
+              setMenuAnchor(null)
             }}
           >
             <ListItemIcon>
@@ -532,7 +544,18 @@ const MonthlyBills = () => {
           </MenuItem>
           <MenuItem
             onClick={() => {
+              handleViewInvoice(selectedBillId)
+            }}
+          >
+            <ListItemIcon>
+              <Receipt fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>View Invoice</ListItemText>
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
               handleMarkAsPaid(selectedBillId)
+              setMenuAnchor(null)
             }}
             disabled={!!bills.find(b => b.monthly_bill_id === selectedBillId)?.is_bill_paid}
           >
@@ -545,7 +568,7 @@ const MonthlyBills = () => {
             onClick={() => {
               const bill = bills.find(b => b.monthly_bill_id === selectedBillId)
               handleDeleteBill(bill)
-              handleMenuClose()
+              setMenuAnchor(null)
             }}
           >
             <ListItemIcon>
@@ -686,7 +709,7 @@ const MonthlyBills = () => {
                     <Typography variant="h6" fontWeight="bold">
                       Total Amount:
                     </Typography>
-                    <Typography variant="h5" fontWeight="bold">
+                    <Typography variant="h6" fontWeight="bold">
                       {formatCurrency(selectedBill.total_amount)}
                     </Typography>
                   </Box>
@@ -730,6 +753,13 @@ const MonthlyBills = () => {
             </Button>
           </DialogActions>
         </Dialog>
+
+        {/* Invoice View Dialog */}
+        <InvoiceView
+          open={invoiceOpen}
+          onClose={handleCloseInvoice}
+          billId={selectedBillId}
+        />
       </Box>
     </Layout>
   )
