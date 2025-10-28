@@ -220,48 +220,38 @@ const InvoiceView = ({ open, onClose, billId }) => {
     const pdf = new jsPDF()
     const pageWidth = pdf.internal.pageSize.getWidth()
     const pageHeight = pdf.internal.pageSize.getHeight()
-    let yPos = 20
-    
-    // Helper function to add new page if needed
-    const checkPageBreak = (requiredSpace = 20) => {
-      if (yPos + requiredSpace > pageHeight - 20) {
-        pdf.addPage()
-        yPos = 20
-        return true
-      }
-      return false
-    }
+    let yPos = 15
     
     // Helper function to draw a line
     const drawLine = (y) => {
       pdf.setDrawColor(200, 200, 200)
-      pdf.line(20, y, pageWidth - 20, y)
+      pdf.line(15, y, pageWidth - 15, y)
     }
     
     // Header Section
-    pdf.setFontSize(24)
+    pdf.setFontSize(20)
     pdf.setTextColor(25, 118, 210)
     pdf.text('Cloud Emporium Monthly Invoice', pageWidth / 2, yPos, { align: 'center' })
-    yPos += 15
+    yPos += 10
     
-    pdf.setFontSize(14)
+    pdf.setFontSize(12)
     pdf.setTextColor(100, 100, 100)
     pdf.text(`Bill Period: ${getMonthYear(invoiceData.billIssueDate)}`, pageWidth / 2, yPos, { align: 'center' })
-    yPos += 20
+    yPos += 15
     
     drawLine(yPos)
-    yPos += 15
+    yPos += 8
     
     // Tenant Information Section
-    pdf.setFontSize(16)
+    pdf.setFontSize(14)
     pdf.setTextColor(25, 118, 210)
-    pdf.text('TENANT INFORMATION', 20, yPos)
-    yPos += 15
+    pdf.text('TENANT INFORMATION', 15, yPos)
+    yPos += 10
     
-    pdf.setFontSize(11)
+    pdf.setFontSize(9)
     pdf.setTextColor(0, 0, 0)
     
-    // Create a table-like layout for tenant info
+    // Create a compact table-like layout for tenant info
     const tenantData = [
       { label: 'Tenant Name', value: String(invoiceData.occupant.name || 'N/A') },
       { label: 'Mobile Number', value: String(invoiceData.occupant.mobile || 'N/A') },
@@ -274,43 +264,43 @@ const InvoiceView = ({ open, onClose, billId }) => {
     tenantData.forEach((item, index) => {
       if (index % 2 === 0) {
         // Left column
-        pdf.text(`${item.label}:`, 20, yPos)
+        pdf.text(`${item.label}:`, 15, yPos)
         pdf.setFont(undefined, 'bold')
-        pdf.text(item.value, 80, yPos)
+        pdf.text(item.value, 60, yPos)
         pdf.setFont(undefined, 'normal')
       } else {
         // Right column
-        pdf.text(`${item.label}:`, 110, yPos)
+        pdf.text(`${item.label}:`, 100, yPos)
         pdf.setFont(undefined, 'bold')
-        pdf.text(item.value, 170, yPos)
+        pdf.text(item.value, 145, yPos)
         pdf.setFont(undefined, 'normal')
-        yPos += 12
+        yPos += 8
       }
     })
     
-    if (tenantData.length % 2 !== 0) yPos += 12
-    yPos += 15
+    if (tenantData.length % 2 !== 0) yPos += 8
+    yPos += 8
     
     drawLine(yPos)
-    yPos += 15
+    yPos += 8
     
     // Consumption & Charges Section
-    pdf.setFontSize(16)
-    pdf.setTextColor(25, 118, 210)
-    pdf.text('CONSUMPTION & CHARGES', 20, yPos)
-    yPos += 20
-    
-    // WAPDA (Electricity) Details
     pdf.setFontSize(14)
     pdf.setTextColor(25, 118, 210)
-    pdf.text('WAPDA (Electricity) Consumption', 20, yPos)
-    yPos += 15
+    pdf.text('CONSUMPTION & CHARGES', 15, yPos)
+    yPos += 12
     
-    pdf.setFontSize(10)
+    // WAPDA (Electricity) Details
+    pdf.setFontSize(12)
+    pdf.setTextColor(25, 118, 210)
+    pdf.text('WAPDA (Electricity) Consumption', 15, yPos)
+    yPos += 8
+    
+    pdf.setFontSize(8)
     pdf.setTextColor(0, 0, 0)
     
     const wapdaData = [
-      { label: 'Meter Serial Number', value: String(invoiceData.electricity.meterSerial || 'N/A') },
+      { label: 'Meter Serial', value: String(invoiceData.electricity.meterSerial || 'N/A') },
       { label: 'Reading Date', value: formatDate(invoiceData.electricity.readingDate) },
       { label: 'Previous Reading', value: formatNumber(invoiceData.electricity.previousReading) },
       { label: 'Current Reading', value: formatNumber(invoiceData.electricity.currentReading) },
@@ -321,33 +311,33 @@ const InvoiceView = ({ open, onClose, billId }) => {
     
     wapdaData.forEach((item, index) => {
       if (index % 2 === 0) {
-        pdf.text(`${item.label}:`, 20, yPos)
+        pdf.text(`${item.label}:`, 15, yPos)
         pdf.setFont(undefined, 'bold')
-        pdf.text(item.value, 80, yPos)
+        pdf.text(item.value, 60, yPos)
         pdf.setFont(undefined, 'normal')
       } else {
-        pdf.text(`${item.label}:`, 110, yPos)
+        pdf.text(`${item.label}:`, 100, yPos)
         pdf.setFont(undefined, 'bold')
-        pdf.text(item.value, 170, yPos)
+        pdf.text(item.value, 145, yPos)
         pdf.setFont(undefined, 'normal')
-        yPos += 10
+        yPos += 6
       }
     })
     
-    if (wapdaData.length % 2 !== 0) yPos += 10
-    yPos += 15
+    if (wapdaData.length % 2 !== 0) yPos += 6
+    yPos += 8
     
     // Generator Details
-    pdf.setFontSize(14)
+    pdf.setFontSize(12)
     pdf.setTextColor(25, 118, 210)
-    pdf.text('Generator Consumption', 20, yPos)
-    yPos += 15
+    pdf.text('Generator Consumption', 15, yPos)
+    yPos += 8
     
-    pdf.setFontSize(10)
+    pdf.setFontSize(8)
     pdf.setTextColor(0, 0, 0)
     
     const generatorData = [
-      { label: 'Meter Serial Number', value: String(invoiceData.generator.meterSerial || 'N/A') },
+      { label: 'Meter Serial', value: String(invoiceData.generator.meterSerial || 'N/A') },
       { label: 'Reading Date', value: formatDate(invoiceData.generator.readingDate) },
       { label: 'Previous Reading', value: formatNumber(invoiceData.generator.previousReading) },
       { label: 'Current Reading', value: formatNumber(invoiceData.generator.currentReading) },
@@ -358,33 +348,33 @@ const InvoiceView = ({ open, onClose, billId }) => {
     
     generatorData.forEach((item, index) => {
       if (index % 2 === 0) {
-        pdf.text(`${item.label}:`, 20, yPos)
+        pdf.text(`${item.label}:`, 15, yPos)
         pdf.setFont(undefined, 'bold')
-        pdf.text(item.value, 80, yPos)
+        pdf.text(item.value, 60, yPos)
         pdf.setFont(undefined, 'normal')
       } else {
-        pdf.text(`${item.label}:`, 110, yPos)
+        pdf.text(`${item.label}:`, 100, yPos)
         pdf.setFont(undefined, 'bold')
-        pdf.text(item.value, 170, yPos)
+        pdf.text(item.value, 145, yPos)
         pdf.setFont(undefined, 'normal')
-        yPos += 10
+        yPos += 6
       }
     })
     
-    if (generatorData.length % 2 !== 0) yPos += 10
-    yPos += 15
+    if (generatorData.length % 2 !== 0) yPos += 6
+    yPos += 8
     
     // Water Details
-    pdf.setFontSize(14)
+    pdf.setFontSize(12)
     pdf.setTextColor(25, 118, 210)
-    pdf.text('Water Consumption', 20, yPos)
-    yPos += 15
+    pdf.text('Water Consumption', 15, yPos)
+    yPos += 8
     
-    pdf.setFontSize(10)
+    pdf.setFontSize(8)
     pdf.setTextColor(0, 0, 0)
     
     const waterData = [
-      { label: 'Meter Serial Number', value: String(invoiceData.water.meterSerial || 'N/A') },
+      { label: 'Meter Serial', value: String(invoiceData.water.meterSerial || 'N/A') },
       { label: 'Reading Date', value: formatDate(invoiceData.water.readingDate) },
       { label: 'Previous Reading', value: formatNumber(invoiceData.water.previousReading) },
       { label: 'Current Reading', value: formatNumber(invoiceData.water.currentReading) },
@@ -395,32 +385,32 @@ const InvoiceView = ({ open, onClose, billId }) => {
     
     waterData.forEach((item, index) => {
       if (index % 2 === 0) {
-        pdf.text(`${item.label}:`, 20, yPos)
+        pdf.text(`${item.label}:`, 15, yPos)
         pdf.setFont(undefined, 'bold')
-        pdf.text(item.value, 80, yPos)
+        pdf.text(item.value, 60, yPos)
         pdf.setFont(undefined, 'normal')
       } else {
-        pdf.text(`${item.label}:`, 110, yPos)
+        pdf.text(`${item.label}:`, 100, yPos)
         pdf.setFont(undefined, 'bold')
-        pdf.text(item.value, 170, yPos)
+        pdf.text(item.value, 145, yPos)
         pdf.setFont(undefined, 'normal')
-        yPos += 10
+        yPos += 6
       }
     })
     
-    if (waterData.length % 2 !== 0) yPos += 10
-    yPos += 20
+    if (waterData.length % 2 !== 0) yPos += 6
+    yPos += 10
     
     drawLine(yPos)
-    yPos += 15
+    yPos += 8
     
     // Other Charges Section
-    pdf.setFontSize(16)
+    pdf.setFontSize(14)
     pdf.setTextColor(25, 118, 210)
-    pdf.text('OTHER CHARGES', 20, yPos)
-    yPos += 20
+    pdf.text('OTHER CHARGES', 15, yPos)
+    yPos += 10
     
-    pdf.setFontSize(11)
+    pdf.setFontSize(9)
     pdf.setTextColor(0, 0, 0)
     
     const chargesData = [
@@ -432,61 +422,61 @@ const InvoiceView = ({ open, onClose, billId }) => {
     
     chargesData.forEach((item, index) => {
       if (index % 2 === 0) {
-        pdf.text(`${item.label}:`, 20, yPos)
+        pdf.text(`${item.label}:`, 15, yPos)
         pdf.setFont(undefined, 'bold')
-        pdf.text(item.value, 80, yPos)
+        pdf.text(item.value, 60, yPos)
         pdf.setFont(undefined, 'normal')
       } else {
-        pdf.text(`${item.label}:`, 110, yPos)
+        pdf.text(`${item.label}:`, 100, yPos)
         pdf.setFont(undefined, 'bold')
-        pdf.text(item.value, 170, yPos)
+        pdf.text(item.value, 145, yPos)
         pdf.setFont(undefined, 'normal')
-        yPos += 12
+        yPos += 8
       }
     })
     
-    if (chargesData.length % 2 !== 0) yPos += 12
-    yPos += 20
+    if (chargesData.length % 2 !== 0) yPos += 8
+    yPos += 10
     
     // Total Amount Section
     pdf.setFillColor(25, 118, 210)
-    pdf.rect(20, yPos, pageWidth - 40, 25, 'F')
+    pdf.rect(15, yPos, pageWidth - 30, 20, 'F')
     
     pdf.setTextColor(255, 255, 255)
-    pdf.setFontSize(18)
+    pdf.setFontSize(16)
     pdf.setFont(undefined, 'bold')
-    pdf.text('TOTAL AMOUNT', 30, yPos + 15)
-    pdf.text(formatCurrency(invoiceData.charges.totalAmount), pageWidth - 30, yPos + 15, { align: 'right' })
+    pdf.text('TOTAL AMOUNT', 25, yPos + 12)
+    pdf.text(formatCurrency(invoiceData.charges.totalAmount), pageWidth - 25, yPos + 12, { align: 'right' })
     
-    yPos += 35
+    yPos += 25
     
     // Due Date
     pdf.setTextColor(0, 0, 0)
-    pdf.setFontSize(12)
+    pdf.setFontSize(10)
     pdf.setFont(undefined, 'normal')
     pdf.text(`Due Date: ${formatDate(invoiceData.billDueDate)}`, pageWidth / 2, yPos, { align: 'center' })
-    yPos += 20
+    yPos += 12
     
     // Notes Section
     pdf.setFillColor(248, 249, 250)
-    pdf.rect(20, yPos, pageWidth - 40, 40, 'F')
+    pdf.rect(15, yPos, pageWidth - 30, 25, 'F')
     
     pdf.setTextColor(0, 0, 0)
-    pdf.setFontSize(11)
+    pdf.setFontSize(9)
     pdf.setFont(undefined, 'bold')
-    pdf.text('NOTES:', 25, yPos + 10)
+    pdf.text('NOTES:', 20, yPos + 8)
     
     pdf.setFont(undefined, 'normal')
-    pdf.setFontSize(10)
-    pdf.text(`1. Rent is charged in advance for the month of ${getMonthYear(invoiceData.billDueDate)}`, 25, yPos + 20)
-    pdf.text(`2. Electricity/Water bill for the month of ${getMonthYear(invoiceData.billIssueDate)}.`, 25, yPos + 30)
+    pdf.setFontSize(8)
+    pdf.text(`1. Rent is charged in advance for the month of ${getMonthYear(invoiceData.billDueDate)}`, 20, yPos + 15)
+    pdf.text(`2. Electricity/Water bill for the month of ${getMonthYear(invoiceData.billIssueDate)}.`, 20, yPos + 22)
     
     // Footer
-    yPos += 50
-    pdf.setFontSize(8)
+    yPos += 30
+    pdf.setFontSize(7)
     pdf.setTextColor(150, 150, 150)
     pdf.text('Generated by Cloud Emporium BMS', pageWidth / 2, yPos, { align: 'center' })
-    pdf.text(`Generated on: ${new Date().toLocaleDateString()}`, pageWidth / 2, yPos + 8, { align: 'center' })
+    pdf.text(`Generated on: ${new Date().toLocaleDateString()}`, pageWidth / 2, yPos + 5, { align: 'center' })
     
     // Save the PDF
     pdf.save(`Cloud-Emporium-Invoice-${invoiceData.billId}-${getMonthYear(invoiceData.billIssueDate)}.pdf`)
