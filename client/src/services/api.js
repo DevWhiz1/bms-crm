@@ -125,6 +125,62 @@ export const tenantAPI = {
   },
 }
 
+// Owner API endpoints
+export const ownerAPI = {
+  getOwners: async (params = {}) => {
+    const response = await api.get('/owners', { params })
+    return response.data
+  },
+
+  getOwnerById: async (id) => {
+    const response = await api.get(`/owners/${id}`)
+    return response.data
+  },
+
+  createOwner: async (formData) => {
+    const response = await api.post('/owners', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return response.data
+  },
+
+  updateOwner: async (id, formData) => {
+    const response = await api.put(`/owners/${id}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return response.data
+  },
+
+  deleteOwner: async (id) => {
+    const response = await api.delete(`/owners/${id}`)
+    return response.data
+  },
+
+  getOwnerStats: async () => {
+    const response = await api.get('/owners/stats')
+    return response.data
+  },
+
+  getAvailableApartments: async (params = {}) => {
+    const response = await api.get('/owners/available-apartments', { params })
+    return response.data
+  },
+
+  assignApartment: async (ownerId, apartmentId) => {
+    const response = await api.post(`/owners/${ownerId}/assign-apartment`, {
+      apartment_id: apartmentId,
+    })
+    return response.data
+  },
+
+  unassignApartment: async (ownerId, apartmentId) => {
+    const response = await api.post(`/owners/${ownerId}/unassign-apartment`, {
+      apartment_id: apartmentId,
+    })
+    return response.data
+  },
+}
+
 // Contract API endpoints
 export const contractAPI = {
   // Get all contracts with pagination and filters
@@ -170,8 +226,8 @@ export const contractAPI = {
   },
 
   // Get apartments grouped by floor
-  getApartmentsByFloor: async () => {
-    const response = await api.get('/contracts/apartments/by-floor')
+  getApartmentsByFloor: async (params = {}) => {
+    const response = await api.get('/contracts/apartments/by-floor', { params })
     return response.data
   },
 }

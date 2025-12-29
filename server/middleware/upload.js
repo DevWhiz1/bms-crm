@@ -2,31 +2,40 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Ensure upload directories exist
-const uploadDirs = {
-  photos: 'uploads/tenants/photos',
-  cnicPhotos: 'uploads/tenants/cnic-photos'
+// Ensure upload directories exist for tenants and owners
+const uploadRoots = {
+  tenant: {
+    photos: 'uploads/tenants/photos',
+    cnicPhotos: 'uploads/tenants/cnic-photos'
+  },
+  owner: {
+    photos: 'uploads/owners/photos',
+    cnicPhotos: 'uploads/owners/cnic-photos'
+  }
 };
 
-Object.values(uploadDirs).forEach(dir => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
+Object.values(uploadRoots).forEach(dirSet => {
+  Object.values(dirSet).forEach(dir => {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  });
 });
 
-// Configure storage
-const storage = multer.diskStorage({
+// Factory to create storage per entity (tenant/owner)
+const createStorage = (type = 'tenant') => multer.diskStorage({
   destination: function (req, file, cb) {
+    const dirs = uploadRoots[type] || uploadRoots.tenant;
     let uploadPath;
-    
+
     if (file.fieldname === 'photo') {
-      uploadPath = uploadDirs.photos;
+      uploadPath = dirs.photos;
     } else if (file.fieldname === 'cnic_photo') {
-      uploadPath = uploadDirs.cnicPhotos;
+      uploadPath = dirs.cnicPhotos;
     } else {
       return cb(new Error('Invalid field name'), false);
     }
-    
+
     cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
@@ -34,13 +43,13 @@ const storage = multer.diskStorage({
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = path.extname(file.originalname);
     const name = path.basename(file.originalname, ext);
-    
+
     // Sanitize filename by removing special characters and spaces
     const sanitizedName = name
       .replace(/[^a-zA-Z0-9]/g, '-') // Replace special chars with hyphens
       .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
       .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
-    
+
     const filename = `${sanitizedName}-${uniqueSuffix}${ext}`;
     cb(null, filename);
   }
@@ -61,8 +70,17 @@ const fileFilter = (req, file, cb) => {
 };
 
 // Configure multer
-const upload = multer({
-  storage: storage,
+const tenantUpload = multer({
+  storage: createStorage('tenant'),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+    files: 2 // Maximum 2 files (photo and cnic_photo)
+  },
+  fileFilter: fileFilter
+});
+
+const ownerUpload = multer({
+  storage: createStorage('owner'),
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit
     files: 2 // Maximum 2 files (photo and cnic_photo)
@@ -71,7 +89,13 @@ const upload = multer({
 });
 
 // Middleware for tenant image uploads
-const uploadTenantImages = upload.fields([
+const uploadTenantImages = tenantUpload.fields([
+  { name: 'photo', maxCount: 1 },
+  { name: 'cnic_photo', maxCount: 1 }
+]);
+
+// Middleware for owner image uploads
+const uploadOwnerImages = ownerUpload.fields([
   { name: 'photo', maxCount: 1 },
   { name: 'cnic_photo', maxCount: 1 }
 ]);
@@ -98,7 +122,7 @@ const handleUploadError = (error, req, res, next) => {
       });
     }
   }
-  
+
   if (error.message.includes('Only image files')) {
     return res.status(400).json({
       status: 'error',
@@ -126,13 +150,14 @@ const deleteFile = (filePath) => {
 // Helper function to get file URL
 const getFileUrl = (filePath, req) => {
   if (!filePath) return null;
-  
+
   const baseUrl = `${req.protocol}://${req.get('host')}`;
   return `${baseUrl}/${filePath.replace(/\\/g, '/')}`;
 };
 
 module.exports = {
   uploadTenantImages,
+  uploadOwnerImages,
   handleUploadError,
   deleteFile,
   getFileUrl

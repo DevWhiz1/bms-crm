@@ -90,8 +90,9 @@ const MeterForm = ({ open, onClose, meter, onSuccess }) => {
     const loadApartments = async () => {
       try {
         const [apartmentsResponse, apartmentsByFloorResponse] = await Promise.all([
-          contractAPI.getApartments(),
-          contractAPI.getApartmentsByFloor(),
+          // For meter assignment, include all apartments (even if under contract)
+          contractAPI.getApartments({ available_only: false, limit: 10000 }),
+          contractAPI.getApartmentsByFloor({ available_only: false }),
         ])
 
         setApartments(apartmentsResponse.data.apartments)
@@ -132,7 +133,7 @@ const MeterForm = ({ open, onClose, meter, onSuccess }) => {
   // Filter apartments based on selected floor
   useEffect(() => {
     if (selectedFloor) {
-      const filtered = apartments.filter(apt => apt.floor_no === selectedFloor)
+      const filtered = apartments.filter(apt => Number(apt.floor_no) === Number(selectedFloor))
       setFilteredApartments(filtered)
     } else {
       setFilteredApartments(apartments)
@@ -307,7 +308,7 @@ const MeterForm = ({ open, onClose, meter, onSuccess }) => {
                   </MenuItem>
                   {apartmentsByFloor.map((floor) => (
                     <MenuItem key={floor.floor_no} value={floor.floor_no}>
-                      Floor {floor.floor_no} ({floor.apartments_count} apartments)
+                      Floor {floor.floor_no} ({floor.apartment_count} apartments)
                     </MenuItem>
                   ))}
                 </Select>

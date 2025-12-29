@@ -16,10 +16,10 @@ const authenticateToken = async (req, res, next) => {
 
     // Verify the token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
+
     // Get user from database to ensure they still exist and are active
     const user = await User.findById(decoded.user_id);
-    
+
     if (!user) {
       return res.status(401).json({
         status: 'error',
@@ -88,12 +88,12 @@ const optionalAuth = async (req, res, next) => {
     if (token) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const user = await User.findById(decoded.user_id);
-      
+
       if (user && user.is_active) {
         req.user = user.toJSON();
       }
     }
-    
+
     next();
   } catch (error) {
     // Continue without authentication if token is invalid

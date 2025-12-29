@@ -12,6 +12,7 @@ const meterRoutes = require('./routes/meterRoutes');
 const meterReadingRoutes = require('./routes/meterReadingRoutes');
 const monthlyBillRoutes = require('./routes/monthlyBillRoutes');
 const invoiceRoutes = require('./routes/invoiceRoutes');
+const ownerRoutes = require('./routes/ownerRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -47,13 +48,13 @@ app.use('/uploads', (req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
+
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);
     return;
   }
-  
+
   next();
 });
 
@@ -64,10 +65,10 @@ app.use('/uploads', express.static('uploads', {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    
+
     // Set cache headers for images
     res.setHeader('Cache-Control', 'public, max-age=31536000');
-    
+
     // Set appropriate content type for images
     if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
       res.setHeader('Content-Type', 'image/jpeg');
@@ -101,6 +102,7 @@ app.use('/api/meters', meterRoutes);
 app.use('/api/meter-readings', meterReadingRoutes);
 app.use('/api/monthly-bills', monthlyBillRoutes);
 app.use('/api/invoices', invoiceRoutes);
+app.use('/api/owners', ownerRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

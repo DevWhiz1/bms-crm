@@ -5,6 +5,7 @@ class Apartment {
     this.apartment_id = data.apartment_id;
     this.apartment_no = data.apartment_no;
     this.floor_no = data.floor_no;
+    this.owner_id = data.owner_id;
   }
 
   // Create a new apartment
@@ -16,11 +17,11 @@ class Apartment {
         INSERT INTO apartments (apartment_no, floor_no) 
         VALUES (?, ?)
       `;
-      
+
       const values = [apartment_no, floor_no];
-      
+
       const result = await db.query(sql, values);
-      
+
       return {
         apartment_id: result.insertId,
         apartment_no,
@@ -50,6 +51,9 @@ class Apartment {
         limit = 100,
         search = '',
         floor_no = null,
+        owner_id = null,
+        available_only = false,
+        ignore_contract_id = null,
         sortBy = 'floor_no',
         sortOrder = 'ASC'
       } = options;
@@ -60,7 +64,7 @@ class Apartment {
 
       // Build where clause
       const conditions = [];
-      
+
       if (search) {
         conditions.push('(apartment_no LIKE ?)');
         const searchTerm = `%${search}%`;
@@ -70,6 +74,27 @@ class Apartment {
       if (floor_no !== null) {
         conditions.push('floor_no = ?');
         values.push(floor_no);
+      }
+
+      if (owner_id !== null) {
+        conditions.push('owner_id = ?');
+        values.push(owner_id);
+      }
+
+      if (available_only) {
+        conditions.push(`NOT EXISTS (
+          SELECT 1 
+          FROM apartments_tenants at
+          JOIN contracts c ON c.contract_id = at.contract_id
+          WHERE at.apartment_id = apartments.apartment_id
+            AND at.is_active = 1
+            AND c.is_active = 1
+            AND CURDATE() BETWEEN c.contract_start_date AND c.contract_end_date
+            ${ignore_contract_id ? 'AND c.contract_id <> ?' : ''}
+        )`);
+        if (ignore_contract_id) {
+          values.push(ignore_contract_id);
+        }
       }
 
       if (conditions.length > 0) {
@@ -88,10 +113,10 @@ class Apartment {
         ORDER BY ${sortBy} ${sortOrder}
         LIMIT ? OFFSET ?
       `;
-      
+
       values.push(limit, offset);
       const results = await db.query(sql, values);
-      
+
       return {
         apartments: results.map(apartment => new Apartment(apartment)),
         pagination: {
@@ -109,8 +134,8 @@ class Apartment {
   // Update apartment
   static async update(apartment_id, updateData) {
     try {
-      const allowedFields = ['apartment_no', 'floor_no'];
-      
+      const allowedFields = ['apartment_no', 'floor_no', 'owner_id'];
+
       const updates = [];
       const values = [];
 
@@ -128,7 +153,7 @@ class Apartment {
       values.push(apartment_id);
 
       const sql = `UPDATE apartments SET ${updates.join(', ')} WHERE apartment_id = ?`;
-      
+
       await db.query(sql, values);
       return true;
     } catch (error) {
@@ -148,7 +173,7 @@ class Apartment {
   }
 
   // Get apartments grouped by floor
-  static async getByFloor() {
+  static async getByFloor({ available_only = false, ignore_contract_id = null } = {}) {
     try {
       const sql = `
         SELECT 
@@ -156,11 +181,27 @@ class Apartment {
           GROUP_CONCAT(apartment_no ORDER BY apartment_no ASC) as apartments,
           COUNT(*) as apartment_count
         FROM apartments 
+        ${available_only ? `
+        WHERE NOT EXISTS (
+          SELECT 1 
+          FROM apartments_tenants at
+          JOIN contracts c ON c.contract_id = at.contract_id
+          WHERE at.apartment_id = apartments.apartment_id
+            AND at.is_active = 1
+            AND c.is_active = 1
+            AND CURDATE() BETWEEN c.contract_start_date AND c.contract_end_date
+            ${ignore_contract_id ? 'AND c.contract_id <> ?' : ''}
+        )` : ''}
         GROUP BY floor_no 
         ORDER BY floor_no ASC
       `;
-      
-      const results = await db.query(sql);
+
+      const params = [];
+      if (available_only && ignore_contract_id) {
+        params.push(ignore_contract_id);
+      }
+
+      const results = await db.query(sql, params);
       return results;
     } catch (error) {
       throw error;
@@ -178,7 +219,7 @@ class Apartment {
           MAX(floor_no) as max_floor
         FROM apartments
       `;
-      
+
       const results = await db.query(sql);
       return results[0];
     } catch (error) {
@@ -191,8 +232,44 @@ class Apartment {
     return {
       apartment_id: this.apartment_id,
       apartment_no: this.apartment_no,
-      floor_no: this.floor_no
+      floor_no: this.floor_no,
+      owner_id: this.owner_id
     };
+  }
+
+  // Get apartments without an assigned owner
+  static async findAvailable(options = {}) {
+    const {
+      search = '',
+      floor_no = null,
+      limit = 50
+    } = options;
+
+    const conditions = ['owner_id IS NULL'];
+    const values = [];
+
+    if (search) {
+      conditions.push('apartment_no LIKE ?');
+      values.push(`%${search}%`);
+    }
+
+    if (floor_no !== null) {
+      conditions.push('floor_no = ?');
+      values.push(floor_no);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    const sql = `
+      SELECT * FROM apartments
+      ${whereClause}
+      ORDER BY floor_no ASC, apartment_no ASC
+      LIMIT ?
+    `;
+
+    values.push(limit);
+    const results = await db.query(sql, values);
+    return results.map(apartment => new Apartment(apartment));
   }
 }
 

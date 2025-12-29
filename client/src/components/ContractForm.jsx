@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   Dialog,
   DialogTitle,
@@ -42,18 +42,9 @@ import { contractAPI, tenantAPI } from '../services/api'
 
 // Validation schema
 const contractSchema = yup.object({
-  rent: yup
-    .string()
-    .required('Rent is required')
-    .max(100, 'Rent must not exceed 100 characters'),
-  service_charges: yup
-    .string()
-    .required('Service charges are required')
-    .max(100, 'Service charges must not exceed 100 characters'),
-  security_fees: yup
-    .string()
-    .required('Security fees are required')
-    .max(100, 'Security fees must not exceed 100 characters'),
+  rent: yup.string().max(100, 'Rent must not exceed 100 characters').optional(),
+  service_charges: yup.string().max(100, 'Service charges must not exceed 100 characters').optional(),
+  security_fees: yup.string().max(100, 'Security fees must not exceed 100 characters').optional(),
   contract_start_date: yup
     .date()
     .required('Contract start date is required')
@@ -71,6 +62,17 @@ const contractSchema = yup.object({
     .array()
     .min(1, 'At least one apartment must be selected')
     .required('Apartments are required'),
+  apartment_charges: yup
+    .array()
+    .of(
+      yup.object({
+        apartment_id: yup.number().required(),
+        rent: yup.string().required('Rent is required').max(100, 'Rent must not exceed 100 characters'),
+        service_charges: yup.string().required('Service charges are required').max(100, 'Service charges must not exceed 100 characters'),
+        security_fees: yup.string().required('Security fees are required').max(100, 'Security fees must not exceed 100 characters'),
+      })
+    )
+    .min(1, 'Please enter charges for each apartment'),
   is_active: yup.boolean(),
 })
 
@@ -81,8 +83,11 @@ const ContractForm = ({ open, onClose, contract, onSuccess }) => {
   const [apartments, setApartments] = useState([])
   const [apartmentsByFloor, setApartmentsByFloor] = useState([])
   const [selectedApartments, setSelectedApartments] = useState([])
-  const [selectedFloor, setSelectedFloor] = useState(null)
+  const [selectedFloors, setSelectedFloors] = useState([])
   const [filteredApartments, setFilteredApartments] = useState([])
+  const [apartmentCharges, setApartmentCharges] = useState([])
+  const [apartmentSelectOpen, setApartmentSelectOpen] = useState(false)
+  const apartmentSelectRef = useRef(null)
 
   const isEdit = !!contract
 
@@ -103,6 +108,7 @@ const ContractForm = ({ open, onClose, contract, onSuccess }) => {
       contract_end_date: '',
       tenant_id: null,
       apartments: [],
+      apartment_charges: [],
       is_active: true,
     },
   })
@@ -113,10 +119,11 @@ const ContractForm = ({ open, onClose, contract, onSuccess }) => {
   useEffect(() => {
     const loadData = async () => {
       try {
+        const apartmentParams = isEdit && contract?.contract_id ? { ignore_contract_id: contract.contract_id } : {}
         const [tenantsResponse, apartmentsResponse, apartmentsByFloorResponse] = await Promise.all([
           tenantAPI.getTenants({ limit: 100 }),
-          contractAPI.getApartments(),
-          contractAPI.getApartmentsByFloor()
+          contractAPI.getApartments(apartmentParams),
+          contractAPI.getApartmentsByFloor(apartmentParams)
         ])
 
         setTenants(tenantsResponse.data.tenants)
@@ -149,12 +156,15 @@ const ContractForm = ({ open, onClose, contract, onSuccess }) => {
         contract_end_date: endDate,
         tenant_id: contract.tenant_id || null,
         apartments: contract.apartments?.map(apt => apt.apartment_id) || [],
+        apartment_charges: contract.apartment_charges || [],
         is_active: contract.is_active !== undefined ? contract.is_active : true,
       })
       setSelectedApartments(contract.apartments || [])
-      // Set initial floor based on first apartment if editing
+      setApartmentCharges(contract.apartment_charges || [])
+      // Preselect all floors used in the contract
       if (contract.apartments && contract.apartments.length > 0) {
-        setSelectedFloor(contract.apartments[0].floor_no)
+        const floors = [...new Set(contract.apartments.map((apt) => apt.floor_no))]
+        setSelectedFloors(floors)
       }
     } else {
       reset({
@@ -165,36 +175,53 @@ const ContractForm = ({ open, onClose, contract, onSuccess }) => {
         contract_end_date: '',
         tenant_id: null,
         apartments: [],
+        apartment_charges: [],
         is_active: true,
       })
       setSelectedApartments([])
-      setSelectedFloor(null)
+      setSelectedFloors([])
+      setApartmentCharges([])
     }
     setError('')
   }, [contract, reset])
 
   // Filter apartments based on selected floor
   useEffect(() => {
-    if (selectedFloor) {
-      const filtered = apartments.filter(apt => apt.floor_no === selectedFloor)
+    if (selectedFloors.length > 0) {
+      const filtered = apartments.filter((apt) => selectedFloors.includes(apt.floor_no))
       setFilteredApartments(filtered)
     } else {
       setFilteredApartments(apartments)
     }
-  }, [selectedFloor, apartments])
+  }, [selectedFloors, apartments])
 
   const handleClose = () => {
     onClose()
     setError('')
     setSelectedApartments([])
-    setSelectedFloor(null)
+    setSelectedFloors([])
+    setApartmentCharges([])
   }
 
-  const handleFloorChange = (floorNo) => {
-    setSelectedFloor(floorNo)
-    // Clear selected apartments when floor changes
-    setValue('apartments', [])
-    setSelectedApartments([])
+  const handleFloorChange = (floors) => {
+    const normalizedFloors = floors || []
+    setSelectedFloors(normalizedFloors)
+
+    // Keep only apartments that belong to the selected floors
+    const allowedApartmentIds = apartments
+      .filter((apt) =>
+        normalizedFloors.length === 0 ? true : normalizedFloors.includes(apt.floor_no)
+      )
+      .map((apt) => apt.apartment_id)
+
+    const currentSelected = watch('apartments') || []
+    const nextSelected = currentSelected.filter((id) => allowedApartmentIds.includes(id))
+
+    if (nextSelected.length !== currentSelected.length) {
+      handleApartmentChange(nextSelected)
+    }
+
+    setApartmentSelectOpen(false)
   }
 
   const handleApartmentChange = (apartmentIds) => {
@@ -203,6 +230,46 @@ const ContractForm = ({ open, onClose, contract, onSuccess }) => {
     // Update selected apartments display
     const selectedApts = apartments.filter(apt => apartmentIds.includes(apt.apartment_id))
     setSelectedApartments(selectedApts)
+
+    // Sync per-apartment charges
+    const updatedCharges = apartmentIds.map((id) => {
+      const existing = apartmentCharges.find((c) => c.apartment_id === id)
+      if (existing) return existing
+      return {
+        apartment_id: id,
+        rent: '',
+        service_charges: '',
+        security_fees: '',
+      }
+    })
+    setApartmentCharges(updatedCharges)
+    setValue('apartment_charges', updatedCharges)
+    setApartmentSelectOpen(false)
+  }
+
+  // Auto aggregate totals for header fields
+  useEffect(() => {
+    const totals = apartmentCharges.reduce(
+      (acc, item) => {
+        acc.rent += parseFloat(item.rent || 0)
+        acc.service_charges += parseFloat(item.service_charges || 0)
+        acc.security_fees += parseFloat(item.security_fees || 0)
+        return acc
+      },
+      { rent: 0, service_charges: 0, security_fees: 0 }
+    )
+
+    setValue('rent', totals.rent ? totals.rent.toString() : '')
+    setValue('service_charges', totals.service_charges ? totals.service_charges.toString() : '')
+    setValue('security_fees', totals.security_fees ? totals.security_fees.toString() : '')
+  }, [apartmentCharges, setValue])
+
+  const updateApartmentCharge = (apartmentId, field, value) => {
+    const updated = apartmentCharges.map((charge) =>
+      charge.apartment_id === apartmentId ? { ...charge, [field]: value } : charge
+    )
+    setApartmentCharges(updated)
+    setValue('apartment_charges', updated)
   }
 
 
@@ -211,10 +278,15 @@ const ContractForm = ({ open, onClose, contract, onSuccess }) => {
       setLoading(true)
       setError('')
 
+      const payload = {
+        ...data,
+        apartment_charges: apartmentCharges,
+      }
+
       if (isEdit) {
-        await contractAPI.updateContract(contract.contract_id, data)
+        await contractAPI.updateContract(contract.contract_id, payload)
       } else {
-        await contractAPI.createContract(data)
+        await contractAPI.createContract(payload)
       }
 
       onSuccess()
@@ -256,76 +328,6 @@ const ContractForm = ({ open, onClose, contract, onSuccess }) => {
 
         <Box component="form" onSubmit={handleSubmit(onSubmit)}>
           <Grid container spacing={3}>
-            {/* Contract Details */}
-            <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom color="primary">
-                Contract Details
-              </Typography>
-            </Grid>
-
-            {/* Rent */}
-            <Grid item xs={12} md={4}>
-              <Controller
-                name="rent"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label="Rent"
-                    placeholder="e.g., 50000"
-                    error={!!errors.rent}
-                    helperText={errors.rent?.message}
-                    InputProps={{
-                      startAdornment: <Typography sx={{ mr: 1, color: 'action.active' }}>PKR</Typography>,
-                    }}
-                  />
-                )}
-              />
-            </Grid>
-
-            {/* Service Charges */}
-            <Grid item xs={12} md={4}>
-              <Controller
-                name="service_charges"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label="Service Charges"
-                    placeholder="e.g., 5000"
-                    error={!!errors.service_charges}
-                    helperText={errors.service_charges?.message}
-                    InputProps={{
-                      startAdornment: <Typography sx={{ mr: 1, color: 'action.active' }}>PKR</Typography>,
-                    }}
-                  />
-                )}
-              />
-            </Grid>
-
-            {/* Security Fees */}
-            <Grid item xs={12} md={4}>
-              <Controller
-                name="security_fees"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label="Security Fees"
-                    placeholder="e.g., 100000"
-                    error={!!errors.security_fees}
-                    helperText={errors.security_fees?.message}
-                    InputProps={{
-                      startAdornment: <Typography sx={{ mr: 1, color: 'action.active' }}>PKR</Typography>,
-                    }}
-                  />
-                )}
-              />
-            </Grid>
-
             {/* Contract Start Date */}
             <Grid item xs={12} md={6}>
               <Controller
@@ -438,19 +440,25 @@ const ContractForm = ({ open, onClose, contract, onSuccess }) => {
             {/* Floor Selection */}
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
-                <InputLabel>Select Floor</InputLabel>
+                <InputLabel>Select Floors</InputLabel>
                 <Select
-                  value={selectedFloor || ''}
+                  multiple
+                  value={selectedFloors}
                   onChange={(e) => handleFloorChange(e.target.value)}
-                  label="Select Floor"
-                  startAdornment={<Home sx={{ mr: 1, color: 'action.active' }} />}
+                  label="Select Floors"
+                  input={<OutlinedInput label="Select Floors" />}
+                  renderValue={(selected) => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {selected.map((floor) => (
+                        <Chip key={floor} label={`Floor ${floor}`} size="small" />
+                      ))}
+                    </Box>
+                  )}
                 >
-                  <MenuItem value="">
-                    <em>All Floors</em>
-                  </MenuItem>
                   {apartmentsByFloor.map((floor) => (
                     <MenuItem key={floor.floor_no} value={floor.floor_no}>
-                      Floor {floor.floor_no} ({floor.apartments_count} apartments)
+                      <Checkbox checked={selectedFloors.includes(floor.floor_no)} />
+                      <ListItemText primary={`Floor ${floor.floor_no}`} secondary={`${floor.apartments_count} apartments`} />
                     </MenuItem>
                   ))}
                 </Select>
@@ -466,11 +474,14 @@ const ContractForm = ({ open, onClose, contract, onSuccess }) => {
                   <FormControl fullWidth error={!!errors.apartments}>
                     <InputLabel>Select Apartments</InputLabel>
                     <Select
+                      open={apartmentSelectOpen}
+                      onOpen={() => setApartmentSelectOpen(true)}
+                      onClose={() => setApartmentSelectOpen(false)}
                       multiple
                       value={field.value || []}
                       onChange={(e) => handleApartmentChange(e.target.value)}
                       input={<OutlinedInput label="Select Apartments" />}
-                      disabled={!selectedFloor}
+                      inputRef={apartmentSelectRef}
                       renderValue={(selected) => (
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                           {selected.map((value) => {
@@ -498,20 +509,38 @@ const ContractForm = ({ open, onClose, contract, onSuccess }) => {
                         </MenuItem>
                       ))}
                     </Select>
-                    {!selectedFloor && (
-                      <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, ml: 1.75 }}>
-                        Please select a floor first
-                      </Typography>
-                    )}
                     {errors.apartments && (
                       <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
                         {errors.apartments.message}
+                      </Typography>
+                    )}
+                    {!errors.apartments && (
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, ml: 1.75 }}>
+                        Choose apartments across any selected floors. Leave floors empty to see all.
                       </Typography>
                     )}
                   </FormControl>
                 )}
               />
             </Grid>
+
+            {/* Add another apartment button */}
+            {apartments.length > 0 && (
+              <Grid item xs={12} md={6}>
+                <Button
+                  variant="outlined"
+                  startIcon={<Add />}
+                  onClick={() => {
+                    setApartmentSelectOpen(true)
+                    apartmentSelectRef.current?.focus()
+                  }}
+                  fullWidth
+                  sx={{ height: '56px' }}
+                >
+                  Add another apartment
+                </Button>
+              </Grid>
+            )}
 
             {/* Selected Apartments Display */}
             {selectedApartments.length > 0 && (
@@ -536,6 +565,74 @@ const ContractForm = ({ open, onClose, contract, onSuccess }) => {
                 </Card>
               </Grid>
             )}
+
+            {selectedApartments.length > 0 && (
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom color="primary" sx={{ mt: 2 }}>
+                  Charges per Apartment
+                </Typography>
+              </Grid>
+            )}
+
+            {selectedApartments.map((apartment, index) => {
+              const charge = apartmentCharges.find((c) => c.apartment_id === apartment.apartment_id) || {}
+              return (
+                <Grid item xs={12} key={apartment.apartment_id}>
+                  <Card variant="outlined">
+                    <CardContent>
+                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                        <Typography variant="subtitle1" fontWeight="bold">
+                          Floor {apartment.floor_no} - Apartment {apartment.apartment_no}
+                        </Typography>
+                        <Chip label={`#${index + 1}`} size="small" />
+                      </Box>
+
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} md={4}>
+                          <TextField
+                            fullWidth
+                            label="Rent"
+                            value={charge.rent || ''}
+                            onChange={(e) => updateApartmentCharge(apartment.apartment_id, 'rent', e.target.value)}
+                            InputProps={{
+                              startAdornment: <Typography sx={{ mr: 1, color: 'action.active' }}>PKR</Typography>,
+                            }}
+                            error={!!errors.apartment_charges?.[index]?.rent}
+                            helperText={errors.apartment_charges?.[index]?.rent?.message}
+                          />
+                        </Grid>
+                        <Grid item xs={12} md={4}>
+                          <TextField
+                            fullWidth
+                            label="Service Charges"
+                            value={charge.service_charges || ''}
+                            onChange={(e) => updateApartmentCharge(apartment.apartment_id, 'service_charges', e.target.value)}
+                            InputProps={{
+                              startAdornment: <Typography sx={{ mr: 1, color: 'action.active' }}>PKR</Typography>,
+                            }}
+                            error={!!errors.apartment_charges?.[index]?.service_charges}
+                            helperText={errors.apartment_charges?.[index]?.service_charges?.message}
+                          />
+                        </Grid>
+                        <Grid item xs={12} md={4}>
+                          <TextField
+                            fullWidth
+                            label="Security Fees"
+                            value={charge.security_fees || ''}
+                            onChange={(e) => updateApartmentCharge(apartment.apartment_id, 'security_fees', e.target.value)}
+                            InputProps={{
+                              startAdornment: <Typography sx={{ mr: 1, color: 'action.active' }}>PKR</Typography>,
+                            }}
+                            error={!!errors.apartment_charges?.[index]?.security_fees}
+                            helperText={errors.apartment_charges?.[index]?.security_fees?.message}
+                          />
+                        </Grid>
+                      </Grid>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              )
+            })}
           </Grid>
         </Box>
       </DialogContent>

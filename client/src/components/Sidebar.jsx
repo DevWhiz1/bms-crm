@@ -21,6 +21,7 @@ import {
   Speed,
   Assessment,
   Receipt,
+  HomeWork,
 } from '@mui/icons-material'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -36,6 +37,11 @@ const menuItems = [
     text: 'Tenants',
     icon: <People />,
     path: '/tenants',
+  },
+  {
+    text: 'Owners',
+    icon: <HomeWork />,
+    path: '/owners',
   },
   {
     text: 'Contracts',
@@ -122,11 +128,11 @@ const Sidebar = ({ open, onClose }) => {
               {user?.email}
             </Typography>
             <Chip
-          label={`Level ${user?.account_level || "nan"}`}
-          size="small"
-          color="primary"
-          variant="outlined"
-        />
+              label={`Level ${user?.account_level || "nan"}`}
+              size="small"
+              color="primary"
+              variant="outlined"
+            />
           </Box>
         </Box>
       </Box>
@@ -209,8 +215,8 @@ const Sidebar = ({ open, onClose }) => {
           borderRight: '1px solid',
           borderColor: 'divider',
           transition: 'width 0.3s ease',
-          top: 64, 
-          height: 'calc(100% - 64px)', 
+          top: 64,
+          height: 'calc(100% - 64px)',
         },
       }}
     >

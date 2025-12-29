@@ -1,4 +1,5 @@
 const db = require('../config/database')
+const ContractApartmentCharge = require('./ContractApartmentCharge')
 
 class MonthlyBill {
   // Generate bills for all active contracts for a specific month
@@ -88,6 +89,7 @@ class MonthlyBill {
             CAST(water_bill AS DECIMAL(10,2)) +
             CAST(management_charges AS DECIMAL(10,2)) +
             CAST(rent AS DECIMAL(10,2)) +
+            CAST(IFNULL(security_fees, 0) AS DECIMAL(10,2)) +
             CAST(IFNULL(arrears, 0) AS DECIMAL(10,2)) +
             CAST(IFNULL(additional_charges, 0) AS DECIMAL(10,2))
           ) as total_arrears
@@ -104,6 +106,26 @@ class MonthlyBill {
 
         const arrears = arrearsResult[0].total_arrears || 0
 
+        // Sum per-apartment charges
+        const apartmentCharges = await ContractApartmentCharge.findByContract(contract.contract_id)
+        const totals = apartmentCharges.reduce(
+          (acc, row) => {
+            acc.rent += parseFloat(row.rent || 0)
+            acc.service_charges += parseFloat(row.service_charges || 0)
+            acc.security_fees += parseFloat(row.security_fees || 0)
+            return acc
+          },
+          { rent: 0, service_charges: 0, security_fees: 0 }
+        )
+
+        // First bill includes security fees once
+        const [billCountRows] = await db.pool.execute(
+          'SELECT COUNT(*) as cnt FROM monthly_bills WHERE contract_id = ?',
+          [contract.contract_id]
+        )
+        const includeSecurity = (billCountRows[0]?.cnt || 0) === 0
+        const securityToBill = includeSecurity ? totals.security_fees : 0
+
         // Insert bill
         const insertQuery = `
           INSERT INTO monthly_bills (
@@ -119,12 +141,13 @@ class MonthlyBill {
             water_bill,
             management_charges,
             rent,
+            security_fees,
             arrears,
             additional_charges,
             bill_issue_date,
             bill_due_date,
             created_by
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `
 
         const [result] = await db.pool.execute(insertQuery, [
@@ -138,8 +161,9 @@ class MonthlyBill {
           totalWaterUnits.toFixed(2),
           water_per_unit_rate,
           waterBill.toFixed(2),
-          contract.service_charges,
-          contract.rent,
+          totals.service_charges.toFixed(2),
+          totals.rent.toFixed(2),
+          securityToBill.toFixed(2),
           arrears.toFixed(2),
           0, // additional_charges
           bill_issue_date,
@@ -154,8 +178,9 @@ class MonthlyBill {
             wapdaBill +
             generatorBill +
             waterBill +
-            parseFloat(contract.service_charges) +
-            parseFloat(contract.rent) +
+            parseFloat(totals.service_charges) +
+            parseFloat(totals.rent) +
+            parseFloat(securityToBill) +
             parseFloat(arrears)
           ).toFixed(2),
         })
@@ -196,6 +221,7 @@ class MonthlyBill {
           CAST(mb.water_bill AS DECIMAL(10,2)) +
           CAST(mb.management_charges AS DECIMAL(10,2)) +
           CAST(mb.rent AS DECIMAL(10,2)) +
+          CAST(IFNULL(mb.security_fees, 0) AS DECIMAL(10,2)) +
           CAST(IFNULL(mb.arrears, 0) AS DECIMAL(10,2)) +
           CAST(IFNULL(mb.additional_charges, 0) AS DECIMAL(10,2))
         ) as total_amount,
@@ -274,6 +300,7 @@ class MonthlyBill {
           CAST(mb.water_bill AS DECIMAL(10,2)) +
           CAST(mb.management_charges AS DECIMAL(10,2)) +
           CAST(mb.rent AS DECIMAL(10,2)) +
+          CAST(IFNULL(mb.security_fees, 0) AS DECIMAL(10,2)) +
           CAST(IFNULL(mb.arrears, 0) AS DECIMAL(10,2)) +
           CAST(IFNULL(mb.additional_charges, 0) AS DECIMAL(10,2))
         ) as total_amount,
@@ -353,6 +380,7 @@ class MonthlyBill {
           CAST(water_bill AS DECIMAL(10,2)) +
           CAST(management_charges AS DECIMAL(10,2)) +
           CAST(rent AS DECIMAL(10,2)) +
+          CAST(IFNULL(security_fees, 0) AS DECIMAL(10,2)) +
           CAST(IFNULL(arrears, 0) AS DECIMAL(10,2)) +
           CAST(IFNULL(additional_charges, 0) AS DECIMAL(10,2))
         ) as total_revenue,
@@ -363,6 +391,7 @@ class MonthlyBill {
             CAST(water_bill AS DECIMAL(10,2)) +
             CAST(management_charges AS DECIMAL(10,2)) +
             CAST(rent AS DECIMAL(10,2)) +
+            CAST(IFNULL(security_fees, 0) AS DECIMAL(10,2)) +
             CAST(IFNULL(arrears, 0) AS DECIMAL(10,2)) +
             CAST(IFNULL(additional_charges, 0) AS DECIMAL(10,2))
           ELSE 0 END

@@ -70,6 +70,27 @@ const validateContractCreation = [
       }
       return true;
     }),
+
+  body('apartment_charges')
+    .isArray({ min: 1 })
+    .withMessage('Apartment charges are required')
+    .custom((charges, { req }) => {
+      if (!Array.isArray(charges)) {
+        throw new Error('Apartment charges must be an array');
+      }
+      for (const charge of charges) {
+        if (!charge.apartment_id || !Number.isInteger(charge.apartment_id)) {
+          throw new Error('apartment_id must be a positive integer');
+        }
+        if (!charge.rent || !charge.service_charges || !charge.security_fees) {
+          throw new Error('rent, service_charges, and security_fees are required for each apartment');
+        }
+      }
+      if (req.body.apartments && charges.length !== req.body.apartments.length) {
+        throw new Error('Apartment charges count must match selected apartments');
+      }
+      return true;
+    }),
   
   body('is_active')
     .optional()
@@ -128,6 +149,26 @@ const validateContractUpdate = [
     .custom((apartments) => {
       if (apartments && !apartments.every(id => Number.isInteger(id) && id > 0)) {
         throw new Error('All apartment IDs must be positive integers');
+      }
+      return true;
+    }),
+
+  body('apartment_charges')
+    .optional()
+    .isArray({ min: 1 })
+    .withMessage('Apartment charges must be an array')
+    .custom((charges, { req }) => {
+      if (!charges) return true;
+      for (const charge of charges) {
+        if (!charge.apartment_id || !Number.isInteger(charge.apartment_id)) {
+          throw new Error('apartment_id must be a positive integer');
+        }
+        if (!charge.rent || !charge.service_charges || !charge.security_fees) {
+          throw new Error('rent, service_charges, and security_fees are required for each apartment');
+        }
+      }
+      if (req.body.apartments && charges.length !== req.body.apartments.length) {
+        throw new Error('Apartment charges count must match selected apartments');
       }
       return true;
     }),

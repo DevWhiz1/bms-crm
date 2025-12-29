@@ -10,6 +10,7 @@ import Contracts from './pages/Contracts'
 import Meters from './pages/Meters'
 import MeterReadings from './pages/MeterReadings'
 import MonthlyBills from './pages/MonthlyBills'
+import Owners from './pages/Owners'
 
 function App() {
   return (
@@ -17,53 +18,62 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route 
-          path="/dashboard" 
+        <Route
+          path="/dashboard"
           element={
             <ProtectedRoute>
               <Dashboard />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/tenants" 
+        <Route
+          path="/tenants"
           element={
             <ProtectedRoute>
               <Tenants />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/contracts" 
+
+        <Route
+          path="/contracts"
           element={
             <ProtectedRoute>
               <Contracts />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/meters" 
+        <Route
+          path="/meters"
           element={
             <ProtectedRoute>
               <Meters />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/meter-readings" 
+        <Route
+          path="/meter-readings"
           element={
             <ProtectedRoute>
               <MeterReadings />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/monthly-bills" 
+        <Route
+          path="/monthly-bills"
           element={
             <ProtectedRoute>
               <MonthlyBills />
             </ProtectedRoute>
-          } 
+          }
+        />
+        <Route
+          path="/owners"
+          element={
+            <ProtectedRoute>
+              <Owners />
+            </ProtectedRoute>
+          }
         />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

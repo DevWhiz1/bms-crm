@@ -85,6 +85,22 @@ class ApartmentTenant {
     }
   }
 
+  // Check if an apartment is currently linked to an active contract
+  static async isApartmentAvailable(apartment_id) {
+    const sql = `
+      SELECT COUNT(*) as active_count
+      FROM apartments_tenants at
+      JOIN contracts c ON c.contract_id = at.contract_id
+      WHERE at.apartment_id = ?
+        AND at.is_active = 1
+        AND c.is_active = 1
+        AND CURDATE() BETWEEN c.contract_start_date AND c.contract_end_date
+    `;
+
+    const [rows] = await db.pool.execute(sql, [apartment_id]);
+    return (rows[0]?.active_count || 0) === 0;
+  }
+
   // Find apartment-tenant relationship by ID
   static async findById(apartment_tenant_id) {
     try {

@@ -107,13 +107,40 @@ const MeterReadingForm = ({ open, onClose, reading, onSuccess }) => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [apartmentsResponse, apartmentsByFloorResponse] = await Promise.all([
-          contractAPI.getApartments(),
-          contractAPI.getApartmentsByFloor(),
-        ])
+        // Pull apartments that actually have meters registered
+        const metersResponse = await meterAPI.getMeters({ page: 1, limit: 100 })
+        // meterAPI already returns response.data, so meters live at data.meters
+        const metersData = metersResponse?.data?.meters || []
 
-        setApartments(apartmentsResponse.data.apartments)
-        setApartmentsByFloor(apartmentsByFloorResponse.data.apartments_by_floor)
+        // Build unique apartments from meters
+        const apartmentsMap = new Map()
+        metersData.forEach((m) => {
+          if (!apartmentsMap.has(m.apartment_id)) {
+            apartmentsMap.set(m.apartment_id, {
+              apartment_id: m.apartment_id,
+              apartment_no: m.apartment_no,
+              floor_no: m.floor_no,
+            })
+          }
+        })
+
+        const apartmentsList = Array.from(apartmentsMap.values())
+
+        // Group by floor for dropdown counts
+        const floorMap = new Map()
+        apartmentsList.forEach((apt) => {
+          const key = apt.floor_no
+          const current = floorMap.get(key) || { floor_no: key, apartment_count: 0 }
+          current.apartment_count += 1
+          floorMap.set(key, current)
+        })
+
+        const floorsList = Array.from(floorMap.values()).sort(
+          (a, b) => Number(a.floor_no) - Number(b.floor_no)
+        )
+
+        setApartments(apartmentsList)
+        setApartmentsByFloor(floorsList)
       } catch (err) {
         console.error('Error loading data:', err)
       }
@@ -127,7 +154,7 @@ const MeterReadingForm = ({ open, onClose, reading, onSuccess }) => {
   // Filter apartments based on selected floor
   useEffect(() => {
     if (selectedFloor) {
-      const filtered = apartments.filter(apt => apt.floor_no === selectedFloor)
+      const filtered = apartments.filter(apt => Number(apt.floor_no) === Number(selectedFloor))
       setFilteredApartments(filtered)
     } else {
       setFilteredApartments([])
@@ -338,7 +365,7 @@ const MeterReadingForm = ({ open, onClose, reading, onSuccess }) => {
                 >
                   {apartmentsByFloor.map((floor) => (
                     <MenuItem key={floor.floor_no} value={floor.floor_no}>
-                      Floor {floor.floor_no} ({floor.apartments_count} apartments)
+                      Floor {floor.floor_no} ({floor.apartment_count} apartments)
                     </MenuItem>
                   ))}
                 </Select>
