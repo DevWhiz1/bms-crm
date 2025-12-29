@@ -81,6 +81,8 @@ const MonthlyBills = () => {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
   const [paymentForm, setPaymentForm] = useState({ amount_received: '', received_date: '', payment_method: '', reference_no: '', notes: '' })
   const [savingPayment, setSavingPayment] = useState(false)
+  const [payments, setPayments] = useState([])
+  const [paymentsLoading, setPaymentsLoading] = useState(false)
 
   // Load bills
   const loadBills = useCallback(async () => {
@@ -210,6 +212,20 @@ const MonthlyBills = () => {
     setPaymentForm({ amount_received: '', received_date: new Date().toISOString().slice(0,10), payment_method: '', reference_no: '', notes: '' })
     setPaymentDialogOpen(true)
     setMenuAnchor(null)
+    loadPayments(bill?.monthly_bill_id)
+  }
+
+  const loadPayments = async (billId) => {
+    if (!billId) return
+    try {
+      setPaymentsLoading(true)
+      const res = await monthlyBillAPI.getPayments(billId)
+      setPayments(res.data?.data?.payments || res.data?.payments || [])
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load payments')
+    } finally {
+      setPaymentsLoading(false)
+    }
   }
 
   const savePayment = async () => {
@@ -219,6 +235,7 @@ const MonthlyBills = () => {
       setPaymentDialogOpen(false)
       await loadBills()
       await loadStats()
+      setPayments([])
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to record payment')
     } finally {
@@ -776,6 +793,46 @@ const MonthlyBills = () => {
           </DialogTitle>
           <DialogContent dividers>
             <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Total Amount: {selectedBill ? formatCurrency(selectedBill.total_amount) : '—'}
+                </Typography>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Received so far: {formatCurrency(payments.reduce((sum, p) => sum + parseFloat(p.amount_received || 0), 0))}
+                </Typography>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Remaining: {selectedBill ? formatCurrency(parseFloat(selectedBill.total_amount || 0) - payments.reduce((sum, p) => sum + parseFloat(p.amount_received || 0), 0)) : '—'}
+                </Typography>
+              </Grid>
+              {paymentsLoading ? (
+                <Grid item xs={12}>
+                  <Box display="flex" alignItems="center" gap={1}><CircularProgress size={18} /> <Typography variant="body2">Loading payments...</Typography></Box>
+                </Grid>
+              ) : payments.length > 0 ? (
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>Previous Payments</Typography>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Date</TableCell>
+                        <TableCell>Method</TableCell>
+                        <TableCell>Reference</TableCell>
+                        <TableCell align="right">Amount</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {payments.map((p) => (
+                        <TableRow key={p.bill_payment_id || `${p.received_date}-${p.amount_received}`}>
+                          <TableCell>{formatDate(p.received_date)}</TableCell>
+                          <TableCell>{p.payment_method || '-'}</TableCell>
+                          <TableCell>{p.reference_no || '-'}</TableCell>
+                          <TableCell align="right">{formatCurrency(p.amount_received)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </Grid>
+              ) : null}
               <Grid item xs={12}>
                 <TextField
                   fullWidth
