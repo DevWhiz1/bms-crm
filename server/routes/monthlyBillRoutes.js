@@ -59,6 +59,22 @@ router.patch(
   monthlyBillController.markBillAsPaid
 )
 
+// Record a payment for a bill
+router.post(
+  '/:id/payments',
+  billIdValidation,
+  handleValidationErrors,
+  monthlyBillController.addPayment
+)
+
+// List payments for a bill
+router.get(
+  '/:id/payments',
+  billIdValidation,
+  handleValidationErrors,
+  monthlyBillController.getPayments
+)
+
 // Delete bill
 router.delete(
   '/:id',

@@ -78,6 +78,9 @@ const MonthlyBills = () => {
   const [selectedBillId, setSelectedBillId] = useState(null)
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [selectedBill, setSelectedBill] = useState(null)
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
+  const [paymentForm, setPaymentForm] = useState({ amount_received: '', received_date: '', payment_method: '', reference_no: '', notes: '' })
+  const [savingPayment, setSavingPayment] = useState(false)
 
   // Load bills
   const loadBills = useCallback(async () => {
@@ -199,6 +202,28 @@ const MonthlyBills = () => {
   const handleCloseInvoice = () => {
     setInvoiceOpen(false)
     setSelectedBillId(null)
+  }
+
+  const openPaymentDialog = () => {
+    const bill = bills.find(b => b.monthly_bill_id === selectedBillId)
+    setSelectedBill(bill)
+    setPaymentForm({ amount_received: '', received_date: new Date().toISOString().slice(0,10), payment_method: '', reference_no: '', notes: '' })
+    setPaymentDialogOpen(true)
+    setMenuAnchor(null)
+  }
+
+  const savePayment = async () => {
+    try {
+      setSavingPayment(true)
+      await monthlyBillAPI.addPayment(selectedBillId, paymentForm)
+      setPaymentDialogOpen(false)
+      await loadBills()
+      await loadStats()
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to record payment')
+    } finally {
+      setSavingPayment(false)
+    }
   }
 
   const formatCurrency = (amount) => {
@@ -543,6 +568,14 @@ const MonthlyBills = () => {
             <ListItemText>View Details</ListItemText>
           </MenuItem>
           <MenuItem
+            onClick={openPaymentDialog}
+          >
+            <ListItemIcon>
+              <AttachMoney fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Record Payment</ListItemText>
+          </MenuItem>
+          <MenuItem
             onClick={() => {
               handleViewInvoice(selectedBillId)
             }}
@@ -720,6 +753,88 @@ const MonthlyBills = () => {
           <DialogActions>
             <Button onClick={() => setViewDialogOpen(false)}>
               Close
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Payment Dialog */}
+        <Dialog
+          open={paymentDialogOpen}
+          onClose={() => setPaymentDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>
+            <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Typography variant="h6" fontWeight="bold">
+                Record Payment - #{selectedBill?.monthly_bill_id}
+              </Typography>
+              <IconButton onClick={() => setPaymentDialogOpen(false)} size="small">
+                <Close />
+              </IconButton>
+            </Box>
+          </DialogTitle>
+          <DialogContent dividers>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Amount Received"
+                  type="number"
+                  value={paymentForm.amount_received}
+                  onChange={(e) => setPaymentForm(prev => ({ ...prev, amount_received: e.target.value }))}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  type="date"
+                  label="Received Date"
+                  InputLabelProps={{ shrink: true }}
+                  value={paymentForm.received_date}
+                  onChange={(e) => setPaymentForm(prev => ({ ...prev, received_date: e.target.value }))}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Payment Method"
+                  value={paymentForm.payment_method}
+                  onChange={(e) => setPaymentForm(prev => ({ ...prev, payment_method: e.target.value }))}
+                  placeholder="Cash/Bank/Online"
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Reference No"
+                  value={paymentForm.reference_no}
+                  onChange={(e) => setPaymentForm(prev => ({ ...prev, reference_no: e.target.value }))}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Notes"
+                  multiline
+                  minRows={2}
+                  value={paymentForm.notes}
+                  onChange={(e) => setPaymentForm(prev => ({ ...prev, notes: e.target.value }))}
+                />
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setPaymentDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={savePayment}
+              variant="contained"
+              disabled={savingPayment || !paymentForm.amount_received || !paymentForm.received_date}
+              startIcon={savingPayment ? <CircularProgress size={20} /> : <AttachMoney />}
+            >
+              {savingPayment ? 'Saving...' : 'Save Payment'}
             </Button>
           </DialogActions>
         </Dialog>

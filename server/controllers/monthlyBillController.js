@@ -171,6 +171,11 @@ exports.markBillAsPaid = async (req, res) => {
 
     const updatedBill = await MonthlyBill.markAsPaid(id, updated_by)
 
+    // Update owner payouts status for this month after bill is paid
+    const OwnerPayout = require('../models/OwnerPayout')
+    const billMonth = new Date(bill.bill_issue_date).toISOString().slice(0, 7)
+    await OwnerPayout.updateStatusForMonth(billMonth)
+
     res.json({
       success: true,
       message: 'Bill marked as paid successfully',
@@ -186,6 +191,65 @@ exports.markBillAsPaid = async (req, res) => {
   }
 }
 
+// Add payment to a bill
+exports.addPayment = async (req, res) => {
+  try {
+    const { id } = req.params
+    const updated_by = req.user.user_id
+    const { amount_received, received_date, payment_method, reference_no, notes } = req.body
+
+    if (!amount_received || !received_date) {
+      return res.status(400).json({
+        success: false,
+        message: 'amount_received and received_date are required',
+      })
+    }
+
+    const existingBill = await MonthlyBill.findById(id)
+    if (!existingBill) {
+      return res.status(404).json({ success: false, message: 'Bill not found' })
+    }
+
+    const updatedBill = await MonthlyBill.addPayment(id, {
+      amount_received,
+      received_date,
+      payment_method: payment_method || null,
+      reference_no: reference_no || null,
+      notes: notes || null,
+      received_by: updated_by,
+    }, updated_by)
+
+    // If bill is now fully paid, update owner payouts status for this month
+    if (updatedBill.is_bill_paid) {
+      const OwnerPayout = require('../models/OwnerPayout')
+      const billMonth = new Date(existingBill.bill_issue_date).toISOString().slice(0, 7)
+      await OwnerPayout.updateStatusForMonth(billMonth)
+    }
+
+    res.json({ success: true, message: 'Payment recorded', data: { bill: updatedBill } })
+  } catch (error) {
+    console.error('Error adding payment:', error)
+    res.status(500).json({ success: false, message: 'Failed to record payment', error: error.message })
+  }
+}
+
+// List payments for a bill
+exports.getPayments = async (req, res) => {
+  try {
+    const { id } = req.params
+    const bill = await MonthlyBill.findById(id)
+    if (!bill) {
+      return res.status(404).json({ success: false, message: 'Bill not found' })
+    }
+
+    const BillPayment = require('../models/BillPayment')
+    const payments = await BillPayment.findByBill(id)
+    res.json({ success: true, data: { payments } })
+  } catch (error) {
+    console.error('Error fetching payments:', error)
+    res.status(500).json({ success: false, message: 'Failed to fetch payments', error: error.message })
+  }
+}
 // Delete bill
 exports.deleteBill = async (req, res) => {
   try {

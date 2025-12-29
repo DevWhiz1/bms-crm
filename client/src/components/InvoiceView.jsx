@@ -600,13 +600,9 @@ const InvoiceView = ({ open, onClose, billId }) => {
               <Typography variant="body2" color="text.secondary">Mobile Number:</Typography>
               <Typography variant="body1" fontWeight="medium">{invoiceData.occupant.mobile}</Typography>
             </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">Floor:</Typography>
-              <Typography variant="body1" fontWeight="medium">{invoiceData.property.floor}</Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">Apartment:</Typography>
-              <Typography variant="body1" fontWeight="medium">{invoiceData.property.apartment}</Typography>
+            <Grid item xs={12}>
+              <Typography variant="body2" color="text.secondary">Apartments:</Typography>
+              <Typography variant="body1" fontWeight="medium">{invoiceData.property.apartmentsList}</Typography>
             </Grid>
             <Grid item xs={6}>
               <Typography variant="body2" color="text.secondary">Contract Start Date:</Typography>
@@ -626,29 +622,13 @@ const InvoiceView = ({ open, onClose, billId }) => {
           </Typography>
           
           {/* WAPDA (Electricity) Details */}
-          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'medium' }}>WAPDA (Electricity) Consumption</Typography>
+          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'medium' }}>WAPDA (Electricity) - Monthly Total</Typography>
           <Grid container spacing={2} sx={{ mb: 2 }}>
-            <Grid item xs={4}>
-              <Typography variant="body2" color="text.secondary">Meter Serial Number:</Typography>
-              <Typography variant="body1">{invoiceData.electricity.meterSerial}</Typography>
-            </Grid>
-            <Grid item xs={4}>
-              <Typography variant="body2" color="text.secondary">Reading Date:</Typography>
-              <Typography variant="body1">{formatDate(invoiceData.electricity.readingDate)}</Typography>
-            </Grid>
-            <Grid item xs={4}>
-              <Typography variant="body2" color="text.secondary">Units Consumed:</Typography>
+            <Grid item xs={6}>
+              <Typography variant="body2" color="text.secondary">Total Units Consumed:</Typography>
               <Typography variant="body1" fontWeight="bold">{formatNumber(invoiceData.electricity.unitsConsumed)}</Typography>
             </Grid>
-            <Grid item xs={4}>
-              <Typography variant="body2" color="text.secondary">Previous Reading:</Typography>
-              <Typography variant="body1">{formatNumber(invoiceData.electricity.previousReading)}</Typography>
-            </Grid>
-            <Grid item xs={4}>
-              <Typography variant="body2" color="text.secondary">Current Reading:</Typography>
-              <Typography variant="body1">{formatNumber(invoiceData.electricity.currentReading)}</Typography>
-            </Grid>
-            <Grid item xs={4}>
+            <Grid item xs={6}>
               <Typography variant="body2" color="text.secondary">Rate per Unit:</Typography>
               <Typography variant="body1">{formatCurrency(invoiceData.electricity.ratePerUnit)}</Typography>
             </Grid>
@@ -659,29 +639,13 @@ const InvoiceView = ({ open, onClose, billId }) => {
           </Grid>
 
           {/* Generator Details */}
-          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'medium' }}>Generator Consumption</Typography>
+          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'medium' }}>Generator - Monthly Total</Typography>
           <Grid container spacing={2} sx={{ mb: 2 }}>
-            <Grid item xs={4}>
-              <Typography variant="body2" color="text.secondary">Meter Serial Number:</Typography>
-              <Typography variant="body1">{invoiceData.generator.meterSerial}</Typography>
-            </Grid>
-            <Grid item xs={4}>
-              <Typography variant="body2" color="text.secondary">Reading Date:</Typography>
-              <Typography variant="body1">{formatDate(invoiceData.generator.readingDate)}</Typography>
-            </Grid>
-            <Grid item xs={4}>
-              <Typography variant="body2" color="text.secondary">Units Consumed:</Typography>
+            <Grid item xs={6}>
+              <Typography variant="body2" color="text.secondary">Total Units Consumed:</Typography>
               <Typography variant="body1" fontWeight="bold">{formatNumber(invoiceData.generator.unitsConsumed)}</Typography>
             </Grid>
-            <Grid item xs={4}>
-              <Typography variant="body2" color="text.secondary">Previous Reading:</Typography>
-              <Typography variant="body1">{formatNumber(invoiceData.generator.previousReading)}</Typography>
-            </Grid>
-            <Grid item xs={4}>
-              <Typography variant="body2" color="text.secondary">Current Reading:</Typography>
-              <Typography variant="body1">{formatNumber(invoiceData.generator.currentReading)}</Typography>
-            </Grid>
-            <Grid item xs={4}>
+            <Grid item xs={6}>
               <Typography variant="body2" color="text.secondary">Rate per Unit:</Typography>
               <Typography variant="body1">{formatCurrency(invoiceData.generator.ratePerUnit)}</Typography>
             </Grid>
@@ -692,29 +656,13 @@ const InvoiceView = ({ open, onClose, billId }) => {
           </Grid>
 
           {/* Water Details */}
-          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'medium' }}>Water Consumption</Typography>
+          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'medium' }}>Water - Monthly Total</Typography>
           <Grid container spacing={2} sx={{ mb: 2 }}>
-            <Grid item xs={4}>
-              <Typography variant="body2" color="text.secondary">Meter Serial Number:</Typography>
-              <Typography variant="body1">{invoiceData.water.meterSerial}</Typography>
-            </Grid>
-            <Grid item xs={4}>
-              <Typography variant="body2" color="text.secondary">Reading Date:</Typography>
-              <Typography variant="body1">{formatDate(invoiceData.water.readingDate)}</Typography>
-            </Grid>
-            <Grid item xs={4}>
-              <Typography variant="body2" color="text.secondary">Units Consumed:</Typography>
+            <Grid item xs={6}>
+              <Typography variant="body2" color="text.secondary">Total Units Consumed:</Typography>
               <Typography variant="body1" fontWeight="bold">{formatNumber(invoiceData.water.unitsConsumed)}</Typography>
             </Grid>
-            <Grid item xs={4}>
-              <Typography variant="body2" color="text.secondary">Previous Reading:</Typography>
-              <Typography variant="body1">{formatNumber(invoiceData.water.previousReading)}</Typography>
-            </Grid>
-            <Grid item xs={4}>
-              <Typography variant="body2" color="text.secondary">Current Reading:</Typography>
-              <Typography variant="body1">{formatNumber(invoiceData.water.currentReading)}</Typography>
-            </Grid>
-            <Grid item xs={4}>
+            <Grid item xs={6}>
               <Typography variant="body2" color="text.secondary">Rate per Unit:</Typography>
               <Typography variant="body1">{formatCurrency(invoiceData.water.ratePerUnit)}</Typography>
             </Grid>
@@ -738,6 +686,10 @@ const InvoiceView = ({ open, onClose, billId }) => {
             <Grid item xs={6}>
               <Typography variant="body2" color="text.secondary">Management Charges:</Typography>
               <Typography variant="body1" fontWeight="medium">{formatCurrency(invoiceData.charges.managementCharges)}</Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="body2" color="text.secondary">Security Fees:</Typography>
+              <Typography variant="body1" fontWeight="medium">{invoiceData.charges.securityFees > 0 ? formatCurrency(invoiceData.charges.securityFees) : 'Already paid'}</Typography>
             </Grid>
             <Grid item xs={6}>
               <Typography variant="body2" color="text.secondary">Arrears:</Typography>

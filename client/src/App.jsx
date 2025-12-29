@@ -11,6 +11,7 @@ import Meters from './pages/Meters'
 import MeterReadings from './pages/MeterReadings'
 import MonthlyBills from './pages/MonthlyBills'
 import Owners from './pages/Owners'
+import OwnerPayouts from './pages/OwnerPayouts'
 
 function App() {
   return (
@@ -64,6 +65,14 @@ function App() {
           element={
             <ProtectedRoute>
               <MonthlyBills />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/owner-payouts"
+          element={
+            <ProtectedRoute>
+              <OwnerPayouts />
             </ProtectedRoute>
           }
         />

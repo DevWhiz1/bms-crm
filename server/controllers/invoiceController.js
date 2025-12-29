@@ -35,11 +35,10 @@ exports.getInvoiceDetails = async (req, res) => {
         cnic: invoiceData.tenant_cnic || 'N/A'
       },
       
-      // Property details
+      // Property details - all apartments
       property: {
-        floor: invoiceData.floor_number || 'N/A',
-        apartment: invoiceData.apartment_number || 'N/A',
-        floorName: `Floor ${invoiceData.floor_number || 'N/A'}`
+        apartments: invoiceData.apartments || [],
+        apartmentsList: invoiceData.apartments?.map(a => `${a.apartment_no} (Floor ${a.floor_no})`).join(', ') || 'N/A'
       },
       
       // Contract details
@@ -49,35 +48,23 @@ exports.getInvoiceDetails = async (req, res) => {
         serviceCharges: parseFloat(invoiceData.service_charges || 0)
       },
       
-      // Electricity (WAPDA) details
+      // Electricity (WAPDA) details - use correct field names from monthly_bills
       electricity: {
-        meterSerial: invoiceData.wapda_meter_serial || 'N/A',
-        readingDate: invoiceData.wapda_reading_date,
-        previousReading: parseFloat(invoiceData.wapda_previous_reading || 0),
-        currentReading: parseFloat(invoiceData.wapda_current_reading || 0),
-        unitsConsumed: parseFloat(invoiceData.wapda_units_consumed || 0),
+        unitsConsumed: parseFloat(invoiceData.wapda_unit_consumed || 0),
         ratePerUnit: parseFloat(invoiceData.wapda_per_unit_rate || 0),
         billAmount: parseFloat(invoiceData.wapda_bill || 0)
       },
       
       // Generator details
       generator: {
-        meterSerial: invoiceData.generator_meter_serial || 'N/A',
-        readingDate: invoiceData.generator_reading_date,
-        previousReading: parseFloat(invoiceData.generator_previous_reading || 0),
-        currentReading: parseFloat(invoiceData.generator_current_reading || 0),
-        unitsConsumed: parseFloat(invoiceData.generator_units_consumed || 0),
+        unitsConsumed: parseFloat(invoiceData.generator_unit_consumed || 0),
         ratePerUnit: parseFloat(invoiceData.generator_per_unit_rate || 0),
         billAmount: parseFloat(invoiceData.generator_bill || 0)
       },
       
       // Water details
       water: {
-        meterSerial: invoiceData.water_meter_serial || 'N/A',
-        readingDate: invoiceData.water_reading_date,
-        previousReading: parseFloat(invoiceData.water_previous_reading || 0),
-        currentReading: parseFloat(invoiceData.water_current_reading || 0),
-        unitsConsumed: parseFloat(invoiceData.water_units_consumed || 0),
+        unitsConsumed: parseFloat(invoiceData.water_unit_consumed || 0),
         ratePerUnit: parseFloat(invoiceData.water_per_unit_rate || 0),
         billAmount: parseFloat(invoiceData.water_bill || 0)
       },
@@ -86,6 +73,7 @@ exports.getInvoiceDetails = async (req, res) => {
       charges: {
         managementCharges: parseFloat(invoiceData.management_charges || 0),
         rent: parseFloat(invoiceData.rent || 0),
+        securityFees: parseFloat(invoiceData.security_fees || 0),
         arrears: parseFloat(invoiceData.arrears || 0),
         additionalCharges: parseFloat(invoiceData.additional_charges || 0),
         totalAmount: parseFloat(invoiceData.total_amount || 0)

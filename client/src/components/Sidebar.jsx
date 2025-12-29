@@ -22,6 +22,7 @@ import {
   Assessment,
   Receipt,
   HomeWork,
+  AttachMoney,
 } from '@mui/icons-material'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -62,6 +63,11 @@ const menuItems = [
     text: 'Monthly Bills',
     icon: <Receipt />,
     path: '/monthly-bills',
+  },
+  {
+    text: 'Owner Payouts',
+    icon: <AttachMoney />,
+    path: '/owner-payouts',
   },
 ]
 

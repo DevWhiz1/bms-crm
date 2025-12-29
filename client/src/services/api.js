@@ -378,6 +378,18 @@ export const monthlyBillAPI = {
     return response.data
   },
 
+  // Record a payment for a bill
+  addPayment: async (id, paymentData) => {
+    const response = await api.post(`/monthly-bills/${id}/payments`, paymentData)
+    return response.data
+  },
+
+  // Get payments for a bill
+  getPayments: async (id) => {
+    const response = await api.get(`/monthly-bills/${id}/payments`)
+    return response.data
+  },
+
   // Delete bill
   deleteBill: async (id) => {
     const response = await api.delete(`/monthly-bills/${id}`)
@@ -395,6 +407,33 @@ export const monthlyBillAPI = {
     const response = await api.get('/monthly-bills/check-exists', {
       params: { month },
     })
+    return response.data
+  },
+}
+
+// Owner Payout API endpoints
+export const ownerPayoutAPI = {
+  // Generate payouts for a month
+  generate: async (month) => {
+    const response = await api.post('/owner-payouts/generate', {}, { params: { month } })
+    return response.data
+  },
+
+  // List payouts for a month
+  list: async (month) => {
+    const response = await api.get('/owner-payouts', { params: { month } })
+    return response.data
+  },
+
+  // Get payout items
+  getItems: async (payoutId) => {
+    const response = await api.get(`/owner-payouts/${payoutId}/items`)
+    return response.data
+  },
+
+  // Mark payout as paid
+  markPaid: async (payoutId, payload = {}) => {
+    const response = await api.patch(`/owner-payouts/${payoutId}/mark-paid`, payload)
     return response.data
   },
 }

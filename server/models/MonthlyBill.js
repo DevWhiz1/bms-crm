@@ -104,7 +104,7 @@ class MonthlyBill {
           month,
         ])
 
-        const arrears = arrearsResult[0].total_arrears || 0
+        const arrears = parseFloat(arrearsResult[0]?.total_arrears ?? 0) || 0
 
         // Sum per-apartment charges
         const apartmentCharges = await ContractApartmentCharge.findByContract(contract.contract_id)
@@ -341,6 +341,68 @@ class MonthlyBill {
       bill_due_date,
       is_bill_paid,
       updated_by,
+      billId,
+    ])
+
+    return await MonthlyBill.findById(billId)
+  }
+
+  // Add a payment and update aggregates/status
+  static async addPayment(billId, payment, updatedBy) {
+    const { amount_received, received_date, payment_method = null, reference_no = null, notes = null, received_by = null } = payment
+
+    // Insert payment
+    const insertSql = `
+      INSERT INTO bill_payments (
+        monthly_bill_id,
+        amount_received,
+        received_date,
+        payment_method,
+        reference_no,
+        notes,
+        received_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `
+    await db.pool.execute(insertSql, [
+      billId,
+      amount_received,
+      received_date,
+      payment_method,
+      reference_no,
+      notes,
+      received_by,
+    ])
+
+    // Compute new aggregate
+    const sumSql = `
+      SELECT SUM(amount_received) AS total_received
+      FROM bill_payments WHERE monthly_bill_id = ?
+    `
+    const [sumRows] = await db.pool.execute(sumSql, [billId])
+    const totalReceived = parseFloat(sumRows[0]?.total_received || 0)
+
+    // Get bill to compare against total amount
+    const bill = await MonthlyBill.findById(billId)
+    const totalAmount = parseFloat(bill.total_amount)
+
+    const isFullyPaid = totalReceived >= totalAmount
+    const paymentStatus = isFullyPaid ? 'paid' : (totalReceived > 0 ? 'partial' : 'unpaid')
+
+    const updateSql = `
+      UPDATE monthly_bills
+      SET amount_received = ?,
+          payment_status = ?,
+          is_bill_paid = ?,
+          paid_at = CASE WHEN ? = 'paid' THEN NOW() ELSE paid_at END,
+          updated_by = ?
+      WHERE monthly_bill_id = ?
+    `
+    await db.pool.execute(updateSql, [
+      totalReceived.toFixed(2),
+      paymentStatus,
+      isFullyPaid ? 1 : 0,
+      paymentStatus,
+      updatedBy,
       billId,
     ])
 

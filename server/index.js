@@ -13,6 +13,7 @@ const meterReadingRoutes = require('./routes/meterReadingRoutes');
 const monthlyBillRoutes = require('./routes/monthlyBillRoutes');
 const invoiceRoutes = require('./routes/invoiceRoutes');
 const ownerRoutes = require('./routes/ownerRoutes');
+const ownerPayoutRoutes = require('./routes/ownerPayoutRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -103,6 +104,7 @@ app.use('/api/meter-readings', meterReadingRoutes);
 app.use('/api/monthly-bills', monthlyBillRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/owners', ownerRoutes);
+app.use('/api/owner-payouts', ownerPayoutRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
